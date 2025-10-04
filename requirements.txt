@@ -1,0 +1,19 @@
+# Core AI Framework
+langchain
+langgraph
+langchain-google-genai
+langchain-groq
+
+# Web Backend
+fastapi
+uvicorn[standard]
+
+# Database
+sqlalchemy
+psycopg2-binary  # For connecting Python to PostgreSQL
+alembic          # For database migrations
+
+# Utilities
+python-dotenv    # For managing environment variables from .env file
+requests         # For making HTTP requests (for news APIs, etc.)
+beautifulsoup4   # For parsing HTML
