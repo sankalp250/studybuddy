@@ -10,6 +10,7 @@ langchain-groq
 # Web Backend
 fastapi
 uvicorn[standard]
+pydantic-settings
 
 # Database
 sqlalchemy
