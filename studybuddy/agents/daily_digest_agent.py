@@ -1,4 +1,4 @@
-# In studybuddy/agents/daily_digest_agent.py 
+# In studybuddy/agents/daily_digest_agent.py (UPDATED TAVILY VERSION)
 
 import operator
 from typing import TypedDict, Annotated, List
@@ -7,7 +7,8 @@ from langgraph.graph import StateGraph, END
 from langchain_groq import ChatGroq
 
 from studybuddy.core.config import settings
-from studybuddy.tools.web_tools import search_and_browse
+# <<< CHANGE 1: Import the new 'search_tool' instead of 'search_and_browse'
+from studybuddy.tools.web_tools import search_tool
 
 class AgentState(TypedDict):
     """The state of our agent."""
@@ -19,13 +20,14 @@ def create_daily_digest_agent():
     if not settings.GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
 
-    # Use a currently supported Groq model (llama-3.1-70b-versatile)
+    # We use a powerful model that is good at following instructions
     llm = ChatGroq(model_name="llama-3.1-8b-instant", groq_api_key=settings.GROQ_API_KEY)
     
-    llm_with_tools = llm.bind_tools([search_and_browse])
-    tools = [search_and_browse]
+    # <<< CHANGE 2: Give the LLM and the agent our new 'search_tool'
+    llm_with_tools = llm.bind_tools([search_tool])
+    tools = [search_tool]
 
-    # --- Agent Nodes ---
+    # --- Agent Nodes (Your robust tool-calling logic is perfect and needs no changes) ---
     def call_model(state: AgentState):
         """Invokes the LLM with the current message history."""
         response = llm_with_tools.invoke(state["messages"])
@@ -40,9 +42,9 @@ def create_daily_digest_agent():
                 tool_name = tool_call.get("name")
                 print(f"--- Attempting to call tool: {tool_name} ---")
                 
-                # Find the correct tool
                 tool_found = False
                 for tool in tools:
+                    # The Tavily tool's name is 'tavily_search_results_json'
                     if tool.name == tool_name:
                         try:
                             result = tool.invoke(tool_call.get("args"))
@@ -50,20 +52,16 @@ def create_daily_digest_agent():
                             tool_found = True
                             print(f"--- Successfully called tool: {tool_name} ---")
                         except Exception as e:
-                            error_msg = f"Error calling tool {tool_name}: {str(e)}"
-                            tool_results.append(ToolMessage(content=error_msg, tool_call_id=tool_call.get("id")))
+                            tool_results.append(ToolMessage(content=f"Error: {e}", tool_call_id=tool_call.get("id")))
                             tool_found = True
-                            print(f"--- Error calling tool {tool_name}: {e} ---")
                         break
                 
                 if not tool_found:
-                    error_msg = f"Tool '{tool_name}' not found. Available tools: {[tool.name for tool in tools]}"
-                    tool_results.append(ToolMessage(content=error_msg, tool_call_id=tool_call.get("id")))
-                    print(f"--- Tool not found: {tool_name}. Available: {[tool.name for tool in tools]} ---")
+                    tool_results.append(ToolMessage(content=f"Tool '{tool_name}' not found.", tool_call_id=tool_call.get("id")))
         
         return {"messages": tool_results}
 
-    # --- Conditional Edge ---
+    # --- Conditional Edge (No changes needed) ---
     def should_continue(state: AgentState):
         """Determines the next step."""
         last_message = state["messages"][-1]
@@ -72,7 +70,7 @@ def create_daily_digest_agent():
         else:
             return END
 
-    # --- Build and Compile the Graph ---
+    # --- Build and Compile the Graph (No changes needed) ---
     workflow = StateGraph(AgentState)
     workflow.add_node("call_model", call_model)
     workflow.add_node("call_tool", call_tool)
@@ -84,16 +82,16 @@ def create_daily_digest_agent():
 
 # --- Main Test Block ---
 if __name__ == "__main__":
-    print("--- Testing Final Daily Digest Agent with Groq (llama-3.1-8b-instant model) ---")
+    print("--- Testing Final Daily Digest Agent with Tavily Search ---")
     
     daily_digest_agent = create_daily_digest_agent()
     
     print("\n--- Agent is compiled. Starting a new stream... ---\n")
 
-    # Add system message to clarify available tools
-    system_message = SystemMessage(content="You are a helpful AI assistant. You have access to a web search tool called 'search_and_browse' that can search the web and browse results. Use this tool when you need current information. Always use the exact tool name 'search_and_browse' when making tool calls.")
+    # <<< CHANGE 3: The SystemMessage is no longer needed. The LLM is smart enough
+    # to use the Tavily tool based on its description alone.
     
-    initial_input = {"messages": [system_message, HumanMessage(content="Summarize the latest news about AI in 1-2 concise sentences.")]}
+    initial_input = {"messages": [HumanMessage(content="What is the latest news about AI? Summarize the top 2-3 stories in a few sentences each.")]}
     
     for event in daily_digest_agent.stream(initial_input, stream_mode="values"):
         last_message = event["messages"][-1]
@@ -106,7 +104,7 @@ if __name__ == "__main__":
             print("Tool Calls:", last_message.tool_calls)
         
         if isinstance(last_message, ToolMessage):
-             print("Result from Tool (first 200 chars):", last_message.content[:200] + "...")
+             print("Result from Tavily (first 200 chars):", last_message.content[:200] + "...")
 
         print("\n" + "="*50 + "\n")
 

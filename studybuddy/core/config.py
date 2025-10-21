@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     # LLM API Keys
     GEMINI_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
+    TAVILY_API_KEY: str | None = None
 
     # Database URL
     DATABASE_URL: str
