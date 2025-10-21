@@ -1,118 +1,113 @@
-# In studybuddy/agents/daily_digest_agent.py
+# In studybuddy/agents/daily_digest_agent.py 
 
+import operator
 from typing import TypedDict, Annotated, List
-from langchain_core.messages import AnyMessage, BaseMessage, HumanMessage, ToolMessage
+from langchain_core.messages import AnyMessage, HumanMessage, ToolMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 
 from studybuddy.core.config import settings
 from studybuddy.tools.web_tools import search_and_browse
 
-# --- 1. Define the Agent's State ---
-# This is the "memory" of our agent. It's a dictionary that holds information
-# that gets passed between nodes.
 class AgentState(TypedDict):
-    messages: Annotated[List[AnyMessage], list]
+    """The state of our agent."""
+    messages: Annotated[List[AnyMessage], operator.add]
 
-# --- 2. Initialize the LLM and Tools ---
-# Make sure GEMINI_API_KEY is set in your .env file
-if not settings.GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in environment variables.")
-
-# Initialize the LLM (Gemini in this case)
-# We "bind" the tool to the LLM so it knows it has access to it.
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", google_api_key=settings.GEMINI_API_KEY)
-llm_with_tools = llm.bind_tools([search_and_browse])
-
-tools = [search_and_browse]
-
-# --- 3. Define the Agent's Nodes (the "actions") ---
-
-# This is our first node. It calls the LLM with the current state of messages.
-def call_model(state: AgentState):
-    """Invokes the LLM with the current message history."""
-    print("---CALLING THE LLM---")
-    messages = state["messages"]
-    response = llm_with_tools.invoke(messages)
-    # We return a dictionary with the response appended to the message list
-    return {"messages": [response]}
-
-# Our second node. It executes the tools that the LLM has requested.
-def call_tool(state: AgentState):
-    """Checks for tool calls and executes them."""
-    print("---CHECKING FOR TOOLS---")
-    last_message = state["messages"][-1] # The LLM's response is the last message
+def create_daily_digest_agent():
+    """Creates and compiles the LangGraph agent."""
     
-    # If the last message is a tool call, execute it
-    if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
-        print("No tool calls found.")
-        return {"messages": []} # Return empty if no tool calls
+    if not settings.GROQ_API_KEY:
+        raise ValueError("GROQ_API_KEY not found in environment variables.")
 
-    print(f"Found tool calls: {last_message.tool_calls}")
-    tool_results = []
-    for tool_call in last_message.tool_calls:
-        tool_name = tool_call.get("name")
-        for tool in tools:
-            if tool.name == tool_name:
-                # Find the right tool and execute it with the provided arguments
-                result = tool.invoke(tool_call.get("args"))
-                tool_results.append(
-                    ToolMessage(content=str(result), tool_call_id=tool_call.get("id"))
-                )
+    # Use a currently supported Groq model (llama-3.1-70b-versatile)
+    llm = ChatGroq(model_name="llama-3.1-8b-instant", groq_api_key=settings.GROQ_API_KEY)
     
-    return {"messages": tool_results}
+    llm_with_tools = llm.bind_tools([search_and_browse])
+    tools = [search_and_browse]
 
-# --- 4. Define the Conditional Edge ---
+    # --- Agent Nodes ---
+    def call_model(state: AgentState):
+        """Invokes the LLM with the current message history."""
+        response = llm_with_tools.invoke(state["messages"])
+        return {"messages": [response]}
 
-# This function decides where to go next after the LLM has been called.
-def should_continue(state: AgentState):
-    """Determines the next step based on the LLM's response."""
-    print("---ASSESSING NEXT STEP---")
-    last_message = state["messages"][-1]
+    def call_tool(state: AgentState):
+        """Executes any tool calls requested by the LLM."""
+        last_message = state["messages"][-1]
+        tool_results = []
+        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            for tool_call in last_message.tool_calls:
+                tool_name = tool_call.get("name")
+                print(f"--- Attempting to call tool: {tool_name} ---")
+                
+                # Find the correct tool
+                tool_found = False
+                for tool in tools:
+                    if tool.name == tool_name:
+                        try:
+                            result = tool.invoke(tool_call.get("args"))
+                            tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call.get("id")))
+                            tool_found = True
+                            print(f"--- Successfully called tool: {tool_name} ---")
+                        except Exception as e:
+                            error_msg = f"Error calling tool {tool_name}: {str(e)}"
+                            tool_results.append(ToolMessage(content=error_msg, tool_call_id=tool_call.get("id")))
+                            tool_found = True
+                            print(f"--- Error calling tool {tool_name}: {e} ---")
+                        break
+                
+                if not tool_found:
+                    error_msg = f"Tool '{tool_name}' not found. Available tools: {[tool.name for tool in tools]}"
+                    tool_results.append(ToolMessage(content=error_msg, tool_call_id=tool_call.get("id")))
+                    print(f"--- Tool not found: {tool_name}. Available: {[tool.name for tool in tools]} ---")
+        
+        return {"messages": tool_results}
+
+    # --- Conditional Edge ---
+    def should_continue(state: AgentState):
+        """Determines the next step."""
+        last_message = state["messages"][-1]
+        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            return "call_tool"
+        else:
+            return END
+
+    # --- Build and Compile the Graph ---
+    workflow = StateGraph(AgentState)
+    workflow.add_node("call_model", call_model)
+    workflow.add_node("call_tool", call_tool)
+    workflow.set_entry_point("call_model")
+    workflow.add_conditional_edges("call_model", should_continue, {"call_tool": "call_tool", END: END})
+    workflow.add_edge("call_tool", "call_model")
     
-    # If the LLM made a tool call, we should go to the 'call_tool' node
-    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
-        return "call_tool"
-    # Otherwise, the LLM has given a final answer, so we can end
-    else:
-        return END
+    return workflow.compile()
 
-# --- 5. Wire up the graph ---
-
-# Instantiate the graph and associate it with our AgentState
-workflow = StateGraph(AgentState)
-
-# Add the nodes to the graph
-workflow.add_node("call_model", call_model)
-workflow.add_node("call_tool", call_tool)
-
-# Set the entry point of the graph
-workflow.set_entry_point("call_model")
-
-# Add the conditional edge. After 'call_model', it will check 'should_continue'
-# to decide whether to go to 'call_tool' or to 'END'.
-workflow.add_conditional_edges(
-    "call_model",
-    should_continue,
-    {
-        "call_tool": "call_tool",
-        END: END
-    }
-)
-
-# Add a regular edge. After 'call_tool' finishes, it will always go back to 'call_model'.
-# This creates the agentic loop.
-workflow.add_edge("call_tool", "call_model")
-
-# Compile the graph into a runnable agent
-daily_digest_agent = workflow.compile()
-
-# You can add a simple test here to see if it runs
+# --- Main Test Block ---
 if __name__ == "__main__":
-    print("Testing Daily Digest Agent...")
-    initial_input = {"messages": [HumanMessage(content="Summarize the latest AI news in 3 sentences.")]}
+    print("--- Testing Final Daily Digest Agent with Groq (llama-3.1-8b-instant model) ---")
+    
+    daily_digest_agent = create_daily_digest_agent()
+    
+    print("\n--- Agent is compiled. Starting a new stream... ---\n")
+
+    # Add system message to clarify available tools
+    system_message = SystemMessage(content="You are a helpful AI assistant. You have access to a web search tool called 'search_and_browse' that can search the web and browse results. Use this tool when you need current information. Always use the exact tool name 'search_and_browse' when making tool calls.")
+    
+    initial_input = {"messages": [system_message, HumanMessage(content="Summarize the latest news about AI in 1-2 concise sentences.")]}
     
     for event in daily_digest_agent.stream(initial_input, stream_mode="values"):
+        last_message = event["messages"][-1]
         print("---AGENT EVENT---")
-        print(event["messages"][-1])
-        print("\n")
+        
+        if hasattr(last_message, 'content') and last_message.content:
+            print("Content:", last_message.content)
+            
+        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
+            print("Tool Calls:", last_message.tool_calls)
+        
+        if isinstance(last_message, ToolMessage):
+             print("Result from Tool (first 200 chars):", last_message.content[:200] + "...")
+
+        print("\n" + "="*50 + "\n")
+
+    print("--- Test finished ---")
