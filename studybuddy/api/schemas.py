@@ -16,5 +16,12 @@ class UserRead(BaseModel):
     email: EmailStr
     created_at: datetime
 
+class DigestRequest(BaseModel):
+    query: str
+
+# It will return a JSON object like: {"response": "the agent's answer"}
+class DigestResponse(BaseModel):
+    response: str
+
     class Config:
         from_attributes = True # Formerly orm_mode = True
