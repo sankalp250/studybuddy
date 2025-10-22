@@ -6,6 +6,7 @@ from passlib.context import CryptContext
 # Import our own modules for database models and API schemas
 from . import models
 from studybuddy.api import schemas
+from typing import List 
 
 # 1. --- Password Hashing Setup ---
 # We create a CryptContext instance, specifying that we want to use the 'bcrypt' algorithm.
@@ -47,3 +48,27 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     db.refresh(db_user)
 
     return db_user
+
+def get_todos_by_user(db: Session, user_id: int) -> List[models.Todo]:
+    """
+    Retrieves all to-do items for a specific user.
+    """
+    return db.query(models.Todo).filter(models.Todo.owner_id == user_id).all()
+
+
+def create_user_todo(db: Session, todo: schemas.TodoCreate, user_id: int) -> models.Todo:
+    """
+    Creates a new to-do item for a specific user.
+    """
+    # Create the SQLAlchemy model instance
+    db_todo = models.Todo(
+        title=todo.title,
+        owner_id=user_id
+    )
+    
+    # Add, commit, and refresh
+    db.add(db_todo)
+    db.commit()
+    db.refresh(db_todo)
+    
+    return db_todo
