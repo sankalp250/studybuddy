@@ -6,32 +6,32 @@ from typing import List
 
 # --- User Schemas ---
 
-# Properties to receive via API on user creation
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-# Properties to return via API (never include the password)
-class UserRead(BaseModel):
+# <<< CHANGE THIS CLASS NAME
+class User(BaseModel):
     id: int
     email: EmailStr
     created_at: datetime
 
+    class Config:
+        from_attributes = True
+
+# --- Digest Schemas ---
 class DigestRequest(BaseModel):
     query: str
 
-# It will return a JSON object like: {"response": "the agent's answer"}
 class DigestResponse(BaseModel):
     response: str
 
-    class Config:
-        from_attributes = True # Formerly orm_mode = True
-
+# --- Todo Schemas ---
 class TodoBase(BaseModel):
     title: str
 
 class TodoCreate(TodoBase):
-    pass # No extra fields needed on creation
+    pass
 
 class Todo(TodoBase):
     id: int
@@ -40,9 +40,7 @@ class Todo(TodoBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True # Allows Pydantic to read data from ORM models
+        from_attributes = True
 
-# New response model for returning a list of todos
 class TodoList(BaseModel):
     todos: List[Todo]
-

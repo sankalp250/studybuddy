@@ -3,7 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from langchain_core.messages import HumanMessage
-from typing import List # Make sure List is imported
+from typing import List
 
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
 from studybuddy.database import connection, crud, models
@@ -20,6 +20,7 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get
     if db_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     return crud.create_user(db=db, user=user)
+
 
 # <<< --- NEW ENDPOINTS START HERE --- >>>
 
