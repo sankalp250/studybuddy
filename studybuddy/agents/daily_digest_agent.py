@@ -14,18 +14,18 @@ class AgentState(TypedDict):
     """The state of our agent."""
     messages: Annotated[List[AnyMessage], operator.add]
 
-def create_daily_digest_agent():
+def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_name parameter with a default
     """Creates and compiles the LangGraph agent."""
     
     if not settings.GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
 
-    # We use a powerful model that is good at following instructions
+    # Use the model_name passed to the function
     llm = ChatGroq(model_name="llama-3.1-8b-instant", groq_api_key=settings.GROQ_API_KEY)
     
-    # <<< CHANGE 2: Give the LLM and the agent our new 'search_tool'
     llm_with_tools = llm.bind_tools([search_tool])
     tools = [search_tool]
+
 
     # --- Agent Nodes (Your robust tool-calling logic is perfect and needs no changes) ---
     def call_model(state: AgentState):
