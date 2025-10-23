@@ -44,3 +44,16 @@ class Todo(TodoBase):
 
 class TodoList(BaseModel):
     todos: List[Todo]
+
+class ChatMessage(BaseModel):
+    role: str  # Will be 'user' or 'assistant'
+    content: str
+
+# The request model for our new chat endpoint
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    # We will rename the DigestResponse to be more generic
+    
+# Rename DigestResponse to a more generic name for reuse
+class AgentResponse(BaseModel):
+    response: str
