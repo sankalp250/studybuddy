@@ -1,36 +1,47 @@
-# In studybuddy/tools/youtube_tools.py
+# In studybuddy/tools/youtube_tools.py (UPDATED TO USE RELIABLE LIBRARY)
 
-import re
+from urllib.parse import urlparse, parse_qs
 from langchain_core.tools import tool
 from youtube_transcript_api import YouTubeTranscriptApi
 
-def _extract_video_id(url: str) -> str | None:
-    """Extracts the YouTube video ID from a URL."""
-    # This regex handles standard, shortened, and embedded YouTube URLs
-    match = re.search(r"(?:v=|\/|youtu\.be\/|embed\/)([a-zA-Z0-9_-]{11})", url)
-    if match:
-        return match.group(1)
-    return None
+def _get_video_id(url: str) -> str | None:
+    """A robust way to get the video ID from any YouTube URL."""
+    try:
+        parsed_url = urlparse(url)
+        if "youtu.be" in parsed_url.hostname:
+            return parsed_url.path[1:]
+        if "youtube.com" in parsed_url.hostname:
+            if parsed_url.path == "/watch":
+                return parse_qs(parsed_url.query)["v"][0]
+            if parsed_url.path.startswith(("/embed/", "/v/")):
+                return parsed_url.path.split("/")[2]
+        return None
+    except Exception:
+        return None
 
 @tool
 def get_youtube_transcript(url: str) -> str:
     """
-    Fetches the full transcript for a given YouTube video URL.
-    Returns the transcript as a single string. If the transcript
-    is disabled for the video or the URL is invalid, an error
-    message is returned.
+    Fetches the full English transcript for a given YouTube video URL.
+    Uses the reliable youtube-transcript-api library.
     """
-    video_id = _extract_video_id(url)
+    video_id = _get_video_id(url)
     if not video_id:
-        return "Error: Invalid YouTube URL provided. Could not extract video ID."
+        return "Error: Could not extract a valid YouTube video ID from the URL."
 
     try:
-        transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
+        # Get the transcript using the reliable library
+        transcript_api = YouTubeTranscriptApi()
+        transcript_list = transcript_api.fetch(video_id, languages=['en'])
         
-        # Combine all parts of the transcript into a single string
-        transcript = " ".join([item['text'] for item in transcript_list])
-        return transcript
-    
+        if not transcript_list:
+            return "Error: No English transcript found for this video."
+        
+        # Extract just the text from each segment
+        transcript_text = " ".join([segment.text for segment in transcript_list])
+        
+        return transcript_text
+
     except Exception as e:
-        print(f"Error fetching transcript for video ID {video_id}: {e}")
-        return f"Error: Could not fetch transcript. It might be disabled for this video. Details: {str(e)}"
+        print(f"Error occurred in get_youtube_transcript: {e}")
+        return f"Error: Failed to fetch transcript. Details: {e}"
