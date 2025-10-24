@@ -90,24 +90,19 @@ def login_for_access_token(
     db: Session = Depends(connection.get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    """
-    Logs in a user and returns a JWT access token.
-    FastAPI expects the client to send 'username' and 'password' in a form.
-    """
-    # 1. Authenticate the user
-    user = crud.get_user_by_email(db, email=form_data.username) # The form uses 'username' field for email
+    # Authenticate the user - THIS IS THE CORRECTED PART
+    user = crud.get_user_by_email(db, email=form_data.username)
     if not user or not security.verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        
-    # 2. Create the token
+    
+    # Create the access token
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     
-    # 3. Return the token
     return {"access_token": access_token, "token_type": "bearer"}
