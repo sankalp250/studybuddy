@@ -6,13 +6,15 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from typing import List
 
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
+from studybuddy.agents.leetcode_agent import create_leetcode_agent
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 
 router = APIRouter()
 
-# --- Load the working agent at startup ---
+# --- Load the working agents at startup ---
 daily_digest_agent = create_daily_digest_agent(model_name="llama3-70b-8192")
+leetcode_agent = create_leetcode_agent(model_name="llama3-70b-8192")
 
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
@@ -49,3 +51,32 @@ def agent_chat(request: schemas.ChatRequest):
         return schemas.AgentResponse(response=final_state["messages"][-1].content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- Daily Digest Endpoint ---
+@router.post("/daily-digest/", response_model=schemas.AgentResponse, tags=["AI Agents"])
+def create_daily_digest(request: schemas.DailyDigestRequest):
+    """Generate a daily digest for a given topic using the AI agent."""
+    try:
+        # Use the daily digest agent to generate content
+        # The agent expects a messages list with HumanMessage
+        from langchain_core.messages import HumanMessage
+        result = daily_digest_agent.invoke({"messages": [HumanMessage(content=request.query)]})
+        
+        # Extract the final response from the agent
+        final_message = result["messages"][-1]
+        if hasattr(final_message, 'content'):
+            return schemas.AgentResponse(response=final_message.content)
+        else:
+            return schemas.AgentResponse(response=str(final_message))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate daily digest: {str(e)}")
+
+@router.post("/generate-leetcode/", response_model=schemas.AgentResponse, tags=["AI Agents"])
+def generate_leetcode_problem(request: schemas.LeetCodeRequest):
+    """Takes a topic and difficulty, runs the LeetCode agent, and returns a Markdown problem."""
+    try:
+        problem_input = {"topic": request.topic, "difficulty": request.difficulty}
+        problem_markdown = leetcode_agent.invoke(problem_input)
+        return schemas.AgentResponse(response=problem_markdown)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")

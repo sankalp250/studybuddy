@@ -33,6 +33,15 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
 
+# --- Daily Digest Schema ---
+class DailyDigestRequest(BaseModel):
+    query: str
+
+# --- LeetCode Schema ---
+class LeetCodeRequest(BaseModel):
+    topic: str
+    difficulty: str
+
 # --- Generic Agent/API Response Schema ---
 class AgentResponse(BaseModel):
     response: str
