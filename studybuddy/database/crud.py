@@ -5,6 +5,8 @@ from typing import List
 from studybuddy.core import security # We import our new security module
 from . import models
 from studybuddy.api import schemas
+from datetime import datetime, timezone
+from . import models
 
 # --- User CRUD Functions ---
 
@@ -32,3 +34,30 @@ def create_user_todo(db: Session, todo: schemas.TodoCreate, user_id: int) -> mod
     db.commit()
     db.refresh(db_todo)
     return db_todo
+
+def create_user_flashcard(db: Session, flashcard: schemas.FlashcardCreate, user_id: int) -> models.Flashcard:
+    """Creates a new flashcard for a specific user."""
+    db_flashcard = models.Flashcard(
+        question=flashcard.question,
+        answer=flashcard.answer,
+        owner_id=user_id
+    )
+    db.add(db_flashcard)
+    db.commit()
+    db.refresh(db_flashcard)
+    return db_flashcard
+
+def get_due_flashcards_for_user(db: Session, user_id: int) -> List[models.Flashcard]:
+    """Retrieves all flashcards for a user that are due for review today."""
+    now = datetime.now(timezone.utc)
+    return db.query(models.Flashcard).filter(
+        models.Flashcard.owner_id == user_id,
+        models.Flashcard.next_review_at <= now
+    ).all()
+
+def get_flashcard(db: Session, flashcard_id: int, user_id: int) -> models.Flashcard | None:
+    """Retrieves a single flashcard by its ID, ensuring it belongs to the correct user."""
+    return db.query(models.Flashcard).filter(
+        models.Flashcard.id == flashcard_id,
+        models.Flashcard.owner_id == user_id
+    ).first()

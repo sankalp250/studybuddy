@@ -52,3 +52,23 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+
+
+class FlashcardBase(BaseModel):
+    question: str
+    answer: str
+
+class FlashcardCreate(FlashcardBase):
+    pass # No extra fields needed on creation
+
+class Flashcard(FlashcardBase):
+    id: int
+    next_review_at: datetime
+    owner_id: int
+    
+    class Config:
+        from_attributes = True
+
+class FlashcardReviewRequest(BaseModel):
+    # This schema will be used to submit a review for a card
+    performance_rating: int

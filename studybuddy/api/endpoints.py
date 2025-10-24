@@ -12,6 +12,7 @@ from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
 from studybuddy.agents.leetcode_agent import create_leetcode_agent
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
+from studybuddy.core import srs_logic
 
 router = APIRouter()
 
@@ -115,5 +116,43 @@ def login_for_access_token(
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/flashcards/", response_model=schemas.Flashcard, tags=["Flashcards"])
+def create_flashcard_for_user(
+    flashcard: schemas.FlashcardCreate,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Creates a new flashcard for the currently authenticated user."""
+    return crud.create_user_flashcard(db=db, flashcard=flashcard, user_id=current_user.id)
+
+@router.get("/flashcards/due/", response_model=List[schemas.Flashcard], tags=["Flashcards"])
+def read_due_flashcards(
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Retrieves all flashcards that are due for review for the current user."""
+    return crud.get_due_flashcards_for_user(db=db, user_id=current_user.id)
+
+@router.post("/flashcards/{flashcard_id}/review/", response_model=schemas.Flashcard, tags=["Flashcards"])
+def review_flashcard(
+    flashcard_id: int,
+    review: schemas.FlashcardReviewRequest,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Updates a flashcard's SRS data after a user reviews it."""
+    db_flashcard = crud.get_flashcard(db, flashcard_id=flashcard_id, user_id=current_user.id)
+    if not db_flashcard:
+        raise HTTPException(status_code=404, detail="Flashcard not found")
+    
+    # Use our SRS algorithm to calculate the new review data
+    updated_flashcard = srs_logic.calculate_srs_update(db_flashcard, review.performance_rating)
+    
+    # Save the changes to the database
+    db.commit()
+    db.refresh(updated_flashcard)
+    
+    return updated_flashcard
 
 
