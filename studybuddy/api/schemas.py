@@ -5,12 +5,10 @@ from datetime import datetime
 from typing import List
 
 # --- User Schemas ---
-
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
 
-# <<< CHANGE THIS CLASS NAME
 class User(BaseModel):
     id: int
     email: EmailStr
@@ -18,13 +16,6 @@ class User(BaseModel):
 
     class Config:
         from_attributes = True
-
-# --- Digest Schemas ---
-class DigestRequest(BaseModel):
-    query: str
-
-class DigestResponse(BaseModel):
-    response: str
 
 # --- Todo Schemas ---
 class TodoBase(BaseModel):
@@ -42,18 +33,18 @@ class Todo(TodoBase):
     class Config:
         from_attributes = True
 
-class TodoList(BaseModel):
-    todos: List[Todo]
-
+# --- Chat Schemas ---
 class ChatMessage(BaseModel):
-    role: str  # Will be 'user' or 'assistant'
+    role: str
     content: str
 
-# The request model for our new chat endpoint
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
-    # We will rename the DigestResponse to be more generic
-    
-# Rename DigestResponse to a more generic name for reuse
+
+# --- Generic Agent/API Response Schema ---
 class AgentResponse(BaseModel):
     response: str
+
+# --- NEW: YouTube Summarizer Schema ---
+class YouTubeURLRequest(BaseModel):
+    url: str
