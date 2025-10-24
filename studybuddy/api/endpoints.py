@@ -13,8 +13,8 @@ from studybuddy.api import schemas
 router = APIRouter()
 
 # --- Load the working agents at startup ---
-daily_digest_agent = create_daily_digest_agent(model_name="llama3-70b-8192")
-leetcode_agent = create_leetcode_agent(model_name="llama3-70b-8192")
+daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
+leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
 
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
