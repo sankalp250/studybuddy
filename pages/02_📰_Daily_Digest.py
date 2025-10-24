@@ -7,7 +7,7 @@ import requests
 # st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide") # <-- REMOVE THIS LINE
 
 # --- Backend API URLs ---
-API_URL = "http://1.0.0.1:8000/api/daily-digest/"
+API_URL = "http://localhost:8000/api/daily-digest/"
 
 # --- Page Title & Description ---
 st.title("📰 AI-Powered Daily Digest")

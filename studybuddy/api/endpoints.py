@@ -1,4 +1,4 @@
-# In studybuddy/api/endpoints.py
+# In studybuddy/api/endpoints.py (CLEANED VERSION)
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -6,18 +6,15 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from typing import List
 
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
-from studybuddy.agents.summarizer_agent import create_summarizer_agent
-from studybuddy.tools.youtube_tools import get_youtube_transcript
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 
 router = APIRouter()
 
-# --- Pre-load Agents at Startup ---
+# --- Load the working agent at startup ---
 daily_digest_agent = create_daily_digest_agent(model_name="llama3-70b-8192")
-summarizer_agent = create_summarizer_agent(model_name="llama-3.1-8b-instant")
 
-# --- User Endpoints ---
+# --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
 def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
@@ -25,7 +22,6 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
 
-# --- Todo Endpoints ---
 @router.post("/users/{user_id}/todos/", response_model=schemas.Todo, tags=["Todos"])
 def create_todo_for_user(user_id: int, todo: schemas.TodoCreate, db: Session = Depends(connection.get_db)):
     db_user = crud.get_user(db, user_id=user_id)
@@ -40,11 +36,11 @@ def read_user_todos(user_id: int, db: Session = Depends(connection.get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return crud.get_todos_by_user(db=db, user_id=user_id)
 
-# --- AI Agent Endpoints ---
+# --- AI Chat Agent Endpoint (WORKING) ---
 @router.post("/agent/chat/", response_model=schemas.AgentResponse, tags=["AI Agents"])
 def agent_chat(request: schemas.ChatRequest):
     try:
-        system_prompt = "You are an expert AI study assistant..." # Using the robust version
+        system_prompt = "You are an expert AI study assistant..."
         langchain_messages = [SystemMessage(content=system_prompt)]
         for msg in request.messages:
             if msg.role == "user": langchain_messages.append(HumanMessage(content=msg.content))
@@ -53,18 +49,3 @@ def agent_chat(request: schemas.ChatRequest):
         return schemas.AgentResponse(response=final_state["messages"][-1].content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-# --- NEW: YouTube Summarizer Endpoint ---
-@router.post("/summarize-youtube/", response_model=schemas.AgentResponse, tags=["AI Agents"])
-def summarize_youtube_video(request: schemas.YouTubeURLRequest):
-    """Takes a YouTube URL, fetches the transcript, and generates a summary."""
-    try:
-        transcript = get_youtube_transcript.invoke({"url": request.url})
-        if "Error:" in transcript:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=transcript)
-        summary = summarizer_agent.invoke({"text_content": transcript})
-        return schemas.AgentResponse(response=summary)
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
