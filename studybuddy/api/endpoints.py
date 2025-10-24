@@ -27,19 +27,28 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
 
-@router.post("/users/{user_id}/todos/", response_model=schemas.Todo, tags=["Todos"])
-def create_todo_for_user(user_id: int, todo: schemas.TodoCreate, db: Session = Depends(connection.get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return crud.create_user_todo(db=db, todo=todo, user_id=user_id)
+@router.post("/todos/", response_model=schemas.Todo, tags=["Todos"])
+def create_todo_for_user(
+    todo: schemas.TodoCreate,
+    db: Session = Depends(connection.get_db),
+    # This dependency will automatically run get_current_user,
+    # ensuring only logged-in users can access this.
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """
+    Creates a new to-do item for the currently authenticated user.
+    """
+    return crud.create_user_todo(db=db, todo=todo, user_id=current_user.id)
 
-@router.get("/users/{user_id}/todos/", response_model=List[schemas.Todo], tags=["Todos"])
-def read_user_todos(user_id: int, db: Session = Depends(connection.get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return crud.get_todos_by_user(db=db, user_id=user_id)
+@router.get("/todos/", response_model=List[schemas.Todo], tags=["Todos"])
+def read_user_todos(
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """
+    Retrieves all to-do items for the currently authenticated user.
+    """
+    return crud.get_todos_by_user(db=db, user_id=current_user.id)
 
 # --- AI Chat Agent Endpoint (WORKING) ---
 @router.post("/agent/chat/", response_model=schemas.AgentResponse, tags=["AI Agents"])
@@ -106,3 +115,5 @@ def login_for_access_token(
     )
     
     return {"access_token": access_token, "token_type": "bearer"}
+
+

@@ -6,6 +6,12 @@ import time
 
 st.set_page_config(page_title="LeetCode Practice", page_icon="💻", layout="wide")
 
+# --- Authentication Check ---
+if "access_token" not in st.session_state or st.session_state.access_token is None:
+    st.error("🔒 Please log in to access LeetCode Practice.")
+    st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
+    st.stop()
+
 API_URL = "http://127.0.0.1:8000/api/generate-leetcode/"
 
 st.title("💻 Brain-Sharp LeetCode Generator")
@@ -37,7 +43,8 @@ if st.button("Generate Problem Set (3 Questions)", type="primary"):
         
         try:
             payload = {"topic": topic, "difficulty": difficulty}
-            response = requests.post(API_URL, json=payload, timeout=180)
+            auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
+            response = requests.post(API_URL, json=payload, headers=auth_headers, timeout=180)
             response.raise_for_status()
             
             result = response.json()

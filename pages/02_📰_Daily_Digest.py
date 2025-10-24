@@ -4,7 +4,13 @@ import streamlit as st
 import requests
 
 # --- Page Configuration ---
-# st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide") # <-- REMOVE THIS LINE
+st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide")
+
+# --- Authentication Check ---
+if "access_token" not in st.session_state or st.session_state.access_token is None:
+    st.error("🔒 Please log in to access the Daily Digest.")
+    st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
+    st.stop()
 
 # --- Backend API URLs ---
 API_URL = "http://localhost:8000/api/daily-digest/"
@@ -25,7 +31,8 @@ if st.button("Generate Digest", type="primary"):
         with st.spinner("Hold on... The AI agent is searching the web for you... This may take a moment."):
             try:
                 payload = {"query": user_query}
-                response = requests.post(API_URL, json=payload, timeout=180)
+                auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
+                response = requests.post(API_URL, json=payload, headers=auth_headers, timeout=180)
                 response.raise_for_status()
                 result = response.json()
                 st.subheader("📝 Here's Your AI-Generated Summary:")

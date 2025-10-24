@@ -89,7 +89,11 @@ else:
                         st.success("Account created successfully! Please go to the Login tab to sign in.")
 
                     except requests.exceptions.HTTPError as e:
-                        st.error(f"Sign up failed. Server returned: {e.response.json().get('detail', 'Unknown error')}")
+                        try:
+                            error_detail = e.response.json().get('detail', 'Unknown error')
+                        except:
+                            error_detail = f"HTTP {e.response.status_code}: {e.response.text}"
+                        st.error(f"Sign up failed. Server returned: {error_detail}")
                     except requests.exceptions.RequestException as e:
                         st.error(f"Connection failed. Is the backend running? Error: {e}")
                 else:

@@ -6,9 +6,17 @@ import requests
 # --- Page Config & URLs ---
 st.set_page_config(page_title="My Smart TODOs", page_icon="🎯", layout="wide")
 BASE_API_URL = "http://127.0.0.1:8000/api"
-USER_ID = 1
-TODO_API_URL = f"{BASE_API_URL}/users/{USER_ID}/todos/"
+TODO_API_URL = f"{BASE_API_URL}/todos/"  # Updated URL
 AGENT_CHAT_URL = f"{BASE_API_URL}/agent/chat/"
+
+# If the user isn't logged in, don't show the page.
+if "access_token" not in st.session_state or st.session_state.access_token is None:
+    st.error("🔒 Please log in to view your TODO list.")
+    st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
+    st.stop()
+
+# We need to create the authorization header
+auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
 
 # --- Page Title ---
 st.title("🎯 My Smart TODO List")
@@ -34,14 +42,14 @@ with col1:
 
         if submit_button and new_todo_title:
             try:
-                requests.post(TODO_API_URL, json={"title": new_todo_title}, timeout=10).raise_for_status()
+                requests.post(TODO_API_URL, json={"title": new_todo_title}, headers=auth_headers, timeout=10).raise_for_status()
                 st.rerun()
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to add task: {e}")
     st.divider()
 
     try:
-        response = requests.get(TODO_API_URL, timeout=10)
+        response = requests.get(TODO_API_URL, headers=auth_headers, timeout=10)
         response.raise_for_status()
         todos = response.json()
         
@@ -80,7 +88,7 @@ with col2:
                 with st.spinner("Thinking..."):
                     payload = {"messages": st.session_state.chat_messages}
                     try:
-                        response = requests.post(AGENT_CHAT_URL, json=payload, timeout=180)
+                        response = requests.post(AGENT_CHAT_URL, json=payload, headers=auth_headers, timeout=180)
                         response.raise_for_status()
                         result = response.json()
                         ai_response = result.get("response", "I'm sorry, I had trouble generating a response.")
