@@ -8,7 +8,9 @@ class Settings(BaseSettings):
     """
     # Load settings from a .env file
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
-
+    SECRET_KEY: str
+    ALGORITHM: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int
     # LLM API Keys
     GEMINI_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None

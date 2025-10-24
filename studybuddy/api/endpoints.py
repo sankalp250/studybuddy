@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from typing import List
-
+from fastapi.security import OAuth2PasswordRequestForm
+from studybuddy.core import security
+from studybuddy.core.config import settings
+from datetime import timedelta
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
 from studybuddy.agents.leetcode_agent import create_leetcode_agent
 from studybuddy.database import connection, crud, models
@@ -80,3 +83,31 @@ def generate_leetcode_problem(request: schemas.LeetCodeRequest):
         return schemas.AgentResponse(response=problem_markdown)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+# --- NEW: Authentication Endpoint ---
+@router.post("/token", response_model=schemas.Token, tags=["Authentication"])
+def login_for_access_token(
+    db: Session = Depends(connection.get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
+    """
+    Logs in a user and returns a JWT access token.
+    FastAPI expects the client to send 'username' and 'password' in a form.
+    """
+    # 1. Authenticate the user
+    user = crud.get_user_by_email(db, email=form_data.username) # The form uses 'username' field for email
+    if not user or not security.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+        
+    # 2. Create the token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    
+    # 3. Return the token
+    return {"access_token": access_token, "token_type": "bearer"}

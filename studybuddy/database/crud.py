@@ -1,17 +1,17 @@
 # In studybuddy/database/crud.py
 
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+# from passlib.context import CryptContext # <-- REMOVED
 from typing import List
-
+from studybuddy.core import security # <-- ADDED
 from . import models
 from studybuddy.api import schemas
 
 # --- Password Hashing Setup ---
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto") # <-- REMOVED
 
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+# def get_password_hash(password: str) -> str: # <-- REMOVED
+#     return pwd_context.hash(password) # <-- REMOVED
 
 # --- User CRUD Functions ---
 
@@ -32,7 +32,8 @@ def create_user(db: Session, user: schemas.UserCreate) -> models.User:
     """
     Creates a new user in the database.
     """
-    hashed_password = get_password_hash(user.password)
+    # Use the imported security function
+    hashed_password = security.get_password_hash(user.password) # <-- UPDATED
     db_user = models.User(email=user.email, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()
