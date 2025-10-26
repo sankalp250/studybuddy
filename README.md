@@ -91,7 +91,7 @@ StudyBuddy AI is a comprehensive learning platform that combines cutting-edge AI
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/studybuddy-ai.git
+   git clone https://github.com/sankalp250/studybuddy-ai.git
    cd studybuddy-ai
    ```
 
