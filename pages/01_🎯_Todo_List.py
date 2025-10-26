@@ -68,36 +68,63 @@ with col1:
         st.error(f"Could not load TODOs: {e}")
 
 # --- Column 2: Chat Interface ---
+
 with col2:
     st.header("AI Prep Session")
     if st.session_state.current_topic:
         st.info(f"Currently discussing: **{st.session_state.current_topic}**")
 
+        # --- NEW "Generate Flashcards" BUTTON ---
+        if st.button("Create Flashcards from this Conversation 🪄"):
+            with st.spinner("AI is analyzing the conversation to create flashcards..."):
+                # Combine the conversation history into a single block of text
+                conversation_text = "\n".join(
+                    [f"{msg['role']}: {msg['content']}" for msg in st.session_state.chat_messages]
+                )
+                
+                try:
+                    headers = {"Authorization": f"Bearer {st.session_state.get('access_token')}"}
+                    payload = {"text_content": conversation_text}
+                    
+                    response = requests.post(
+                        f"{BASE_API_URL}/generate-flashcards/",
+                        json=payload,
+                        headers=headers,
+                        timeout=180
+                    )
+                    response.raise_for_status()
+                    
+                    st.success(response.json().get("detail", "Flashcards created!"))
+                    st.toast("✅ Flashcards saved! Check the SRS Review page later.")
+
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Failed to create flashcards. Error: {e}")
+
         # Display existing chat messages
         for msg in st.session_state.chat_messages:
-            st.chat_message(msg["role"]).write(msg["content"])
+            with st.chat_message(msg["role"]):
+                st.markdown(msg["content"])
         
-        # The new chat input field
+        # Chat input
         if prompt := st.chat_input("Ask a follow-up question..."):
-            # Add user message to history and display it
             st.session_state.chat_messages.append({"role": "user", "content": prompt})
-            st.chat_message("user").write(prompt)
-
-            # Send the whole conversation to the backend
+            
+            with st.chat_message("user"):
+                st.markdown(prompt)
+            
             with st.chat_message("assistant"):
                 with st.spinner("Thinking..."):
-                    payload = {"messages": st.session_state.chat_messages}
                     try:
-                        response = requests.post(AGENT_CHAT_URL, json=payload, headers=auth_headers, timeout=180)
+                        # Format chat messages for the API
+                        api_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.chat_messages]
+                        response = requests.post(AGENT_CHAT_URL, json={"messages": api_messages}, timeout=60)
                         response.raise_for_status()
-                        result = response.json()
-                        ai_response = result.get("response", "I'm sorry, I had trouble generating a response.")
-                        
-                        # Add AI response to history and display it
+                        ai_response = response.json()["response"]
+                        st.markdown(ai_response)
                         st.session_state.chat_messages.append({"role": "assistant", "content": ai_response})
-                        st.write(ai_response)
-
                     except requests.exceptions.RequestException as e:
-                        st.error(f"Error communicating with the agent: {e}")
+                        error_msg = f"Error communicating with the agent: {e}"
+                        st.error(error_msg)
+                        st.session_state.chat_messages.append({"role": "assistant", "content": error_msg})
     else:
-        st.info("Select a task from the left to start your AI prep session.")
+        st.info("👈 Select a task from the left to start preparing!")

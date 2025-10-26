@@ -10,6 +10,7 @@ from studybuddy.core.config import settings
 from datetime import timedelta
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
 from studybuddy.agents.leetcode_agent import create_leetcode_agent
+from studybuddy.agents.flashcard_agent import create_flashcard_agent
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 from studybuddy.core import srs_logic
@@ -19,6 +20,7 @@ router = APIRouter()
 # --- Load the working agents at startup ---
 daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
 leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
+flashcard_agent = create_flashcard_agent(model_name="llama-3.1-8b-instant")
 
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
@@ -154,5 +156,62 @@ def review_flashcard(
     db.refresh(updated_flashcard)
     
     return updated_flashcard
+
+@router.post("/generate-flashcards/", status_code=status.HTTP_201_CREATED, tags=["Flashcards"])
+def generate_and_save_flashcards(
+    request: schemas.TextContentRequest,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """
+    Takes a block of text, generates flashcards from it, and saves them to the user's account.
+    Returns the number of flashcards created.
+    """
+    try:
+        # Step 1: Run the flashcard generation agent
+        ai_response = flashcard_agent(request.text_content)
+        
+        # Step 2: Parse the AI response (should be JSON)
+        import json
+        import re
+        
+        # Clean the response to extract JSON
+        json_match = re.search(r'\[.*\]', ai_response, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(0)
+        else:
+            json_str = ai_response
+        
+        try:
+            flashcards_data = json.loads(json_str)
+            if not isinstance(flashcards_data, list):
+                flashcards_data = [flashcards_data]
+        except json.JSONDecodeError as e:
+            # If JSON parsing fails, create a single flashcard from the entire conversation
+            flashcard_schema = schemas.FlashcardCreate(
+                question="AI Generated Summary",
+                answer=request.text_content[:500]
+            )
+            crud.create_user_flashcard(db=db, flashcard=flashcard_schema, user_id=current_user.id)
+            return {"detail": "Successfully created 1 flashcard from conversation!"}
+
+        # Step 3: Loop through the flashcards and save them to the database
+        created_count = 0
+        for card_data in flashcards_data:
+            if isinstance(card_data, dict) and "question" in card_data and "answer" in card_data:
+                flashcard_schema = schemas.FlashcardCreate(
+                    question=card_data["question"],
+                    answer=card_data["answer"]
+                )
+                crud.create_user_flashcard(db=db, flashcard=flashcard_schema, user_id=current_user.id)
+                created_count += 1
+        
+        return {"detail": f"Successfully created {created_count} flashcards!"}
+
+    except Exception as e:
+        import traceback
+        print(f"Flashcard generation endpoint failed: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 

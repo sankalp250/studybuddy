@@ -72,3 +72,8 @@ class Flashcard(FlashcardBase):
 class FlashcardReviewRequest(BaseModel):
     # This schema will be used to submit a review for a card
     performance_rating: int
+
+
+# --- NEW: Flashcard Generation Schema ---
+class TextContentRequest(BaseModel):
+    text_content: str
