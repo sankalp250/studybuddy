@@ -117,7 +117,7 @@ with col2:
                     try:
                         # Format chat messages for the API
                         api_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.chat_messages]
-                        response = requests.post(AGENT_CHAT_URL, json={"messages": api_messages}, timeout=60)
+                        response = requests.post(AGENT_CHAT_URL, json={"messages": api_messages}, headers=auth_headers, timeout=60)
                         response.raise_for_status()
                         ai_response = response.json()["response"]
                         st.markdown(ai_response)

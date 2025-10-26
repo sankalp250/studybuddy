@@ -77,3 +77,6 @@ class FlashcardReviewRequest(BaseModel):
 # --- NEW: Flashcard Generation Schema ---
 class TextContentRequest(BaseModel):
     text_content: str
+
+class ResumeSummary(BaseModel):
+    resume_summary: str

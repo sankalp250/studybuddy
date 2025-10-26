@@ -11,6 +11,8 @@ from datetime import timedelta
 from studybuddy.agents.daily_digest_agent import create_daily_digest_agent
 from studybuddy.agents.leetcode_agent import create_leetcode_agent
 from studybuddy.agents.flashcard_agent import create_flashcard_agent
+from studybuddy.agents.resume_agent import create_resume_agent
+from studybuddy.agents.interview_agent import create_interview_agent
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 from studybuddy.core import srs_logic
@@ -21,6 +23,8 @@ router = APIRouter()
 daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
 leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
 flashcard_agent = create_flashcard_agent(model_name="llama-3.1-8b-instant")
+resume_agent = create_resume_agent(model_name="llama-3.1-8b-instant")
+interview_agent = create_interview_agent(model_name="llama-3.1-8b-instant")
 
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
@@ -55,15 +59,22 @@ def read_user_todos(
 
 # --- AI Chat Agent Endpoint (WORKING) ---
 @router.post("/agent/chat/", response_model=schemas.AgentResponse, tags=["AI Agents"])
-def agent_chat(request: schemas.ChatRequest):
+def agent_chat(
+    request: schemas.ChatRequest,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
     try:
-        system_prompt = "You are an expert AI study assistant..."
-        langchain_messages = [SystemMessage(content=system_prompt)]
-        for msg in request.messages:
-            if msg.role == "user": langchain_messages.append(HumanMessage(content=msg.content))
-            elif msg.role == "assistant": langchain_messages.append(AIMessage(content=msg.content))
-        final_state = daily_digest_agent.invoke({"messages": langchain_messages})
-        return schemas.AgentResponse(response=final_state["messages"][-1].content)
+        # Get user's resume summary if available
+        resume_context = ""
+        if current_user.resume_summary:
+            resume_context = f"\n\nUSER'S RESUME SUMMARY:\n{current_user.resume_summary}\n\nIMPORTANT: When asking questions about projects or experiences, reference specific details from the resume above. Personalize the interview preparation to match the user's actual background."
+        
+        system_prompt = f"You are an expert AI study assistant specializing in interview preparation. Your goal is to help users prepare for interviews by asking personalized questions based on their resume and study topics.{resume_context}"
+        
+        # Use the interview agent instead of daily_digest_agent
+        response = interview_agent(request.messages, resume_context)
+        return schemas.AgentResponse(response=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -213,5 +224,36 @@ def generate_and_save_flashcards(
         print(f"Flashcard generation endpoint failed: {e}")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+# --- Resume Endpoints ---
+@router.post("/upload-resume/", tags=["Resume"])
+def upload_resume(
+    request: schemas.TextContentRequest,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Uploads and summarizes a user's resume."""
+    try:
+        # Generate summary using AI agent
+        summary = resume_agent(request.text_content)
+        
+        # Update user's resume summary in database
+        current_user.resume_summary = summary
+        db.commit()
+        db.refresh(current_user)
+        
+        return {"detail": "Resume uploaded and summarized successfully!", "summary": summary}
+    
+    except Exception as e:
+        print(f"Resume upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to process resume: {str(e)}")
+
+@router.get("/resume-summary/", response_model=schemas.ResumeSummary, tags=["Resume"])
+def get_resume_summary(
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Gets the current user's resume summary."""
+    return {"resume_summary": current_user.resume_summary or "No resume uploaded yet."}
 
 

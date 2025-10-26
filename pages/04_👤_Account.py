@@ -23,6 +23,79 @@ if "user_email" not in st.session_state:
 if st.session_state.access_token:
     st.title(f"👋 Welcome, {st.session_state.user_email}!")
     st.markdown("You are now logged in.")
+    
+    # Resume Upload Section
+    st.divider()
+    st.header("📄 Upload Your Resume")
+    st.markdown("Upload your resume to get personalized interview prep questions!")
+    
+    uploaded_file = st.file_uploader("Choose a file", type=['pdf', 'txt'])
+    
+    if uploaded_file is not None:
+        if st.button("Upload & Process Resume"):
+            with st.spinner("Processing your resume..."):
+                try:
+                    # Read the file content
+                    file_content = uploaded_file.read()
+                    
+                    # Extract text based on file type
+                    if uploaded_file.type == "application/pdf":
+                        from studybuddy.tools.resume_parser import extract_text_from_pdf
+                        resume_text = extract_text_from_pdf(file_content)
+                    else:
+                        resume_text = file_content.decode('utf-8')
+                    
+                    # Upload to backend
+                    headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
+                    response = requests.post(
+                        f"{BASE_API_URL}/upload-resume/",
+                        json={"text_content": resume_text},
+                        headers=headers,
+                        timeout=60
+                    )
+                    response.raise_for_status()
+                    
+                    st.success("✅ Resume uploaded and processed successfully!")
+                    result = response.json()
+                    with st.expander("View Resume Summary"):
+                        st.write(result.get("summary", ""))
+                    
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code == 401:
+                        st.error("Please login again. Your session may have expired.")
+                        st.session_state.access_token = None
+                        st.rerun()
+                    else:
+                        st.error(f"Server error: {e.response.text}")
+                except Exception as e:
+                    st.error(f"Failed to upload resume: {e}")
+    
+    # Get current resume summary
+    st.divider()
+    st.header("📋 Current Resume Summary")
+    if st.button("Load Resume Summary"):
+        try:
+            headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
+            response = requests.get(
+                f"{BASE_API_URL}/resume-summary/",
+                headers=headers,
+                timeout=10
+            )
+            response.raise_for_status()
+            summary_data = response.json()
+            summary_text = summary_data.get("resume_summary", "No resume uploaded yet.")
+            st.info(summary_text)
+            if summary_text != "No resume uploaded yet.":
+                st.success("Resume summary loaded successfully!")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 401:
+                st.error("Please login again. Your session may have expired.")
+                st.session_state.access_token = None
+                st.rerun()
+            else:
+                st.error(f"Could not load resume summary: {e}")
+        except Exception as e:
+            st.error(f"Could not load resume summary: {e}")
 
     if st.button("Logout"):
         # Clear the session state to log the user out

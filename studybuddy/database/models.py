@@ -15,6 +15,9 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     
+    # AI-generated summary of the user's resume
+    resume_summary = Column(Text, nullable=True)
+    
     # This creates a back-reference from the User model to the Todo model
     todos = relationship("Todo", back_populates="owner")
     flashcards = relationship("Flashcard", back_populates="owner")  # Add relationship to Flashcard
@@ -68,19 +71,3 @@ class Flashcard(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 # <<< --- NEW CODE ENDS HERE --- >>>
-
-class User(Base):
-    """Represents a user in the database."""
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    
-    # <<< --- NEW COLUMN --- >>>
-    resume_summary = Column(Text, nullable=True)  # Store AI-generated summary of the resume
-    
-    # Relationships
-    todos = relationship("Todo", back_populates="owner")
-    flashcards = relationship("Flashcard", back_populates="owner")
