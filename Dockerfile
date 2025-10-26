@@ -9,7 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    APP_VERSION=1.1.0
+    APP_VERSION=1.2.0
+    FORCE_REBUILD=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
