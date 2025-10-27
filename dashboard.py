@@ -8,7 +8,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
+BASE_URL = st.secrets["BACKEND_URL"]
 st.title("Welcome to StudyBuddy AI! 🤖")
 st.markdown("Your intelligent ecosystem for focused learning and interview preparation.")
 st.info("Select a tool from the sidebar on the left to get started.")
