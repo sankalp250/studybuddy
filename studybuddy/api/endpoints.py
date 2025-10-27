@@ -59,10 +59,23 @@ def get_interview_agent():
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
 def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
+    try:
+        db_user = crud.get_user_by_email(db, email=user.email)
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        new_user = crud.create_user(db=db, user=user)
+        return new_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        print(f"User registration error: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 @router.post("/todos/", response_model=schemas.Todo, tags=["Todos"])
 def create_todo_for_user(

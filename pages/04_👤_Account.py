@@ -186,17 +186,36 @@ else:
                     }
                     try:
                         response = requests.post(USERS_URL, json=signup_data, timeout=10)
+                        
+                        # Show detailed error information
+                        if st.session_state.show_debug:
+                            st.info(f"Response Status: {response.status_code}")
+                            st.info(f"Response Text: {response.text}")
+                        
                         response.raise_for_status()
                         
                         st.success("Account created successfully! Please go to the Login tab to sign in.")
 
                     except requests.exceptions.HTTPError as e:
+                        error_detail = "Unknown error"
                         try:
                             error_detail = e.response.json().get('detail', 'Unknown error')
                         except:
                             error_detail = f"HTTP {e.response.status_code}: {e.response.text}"
-                        st.error(f"Sign up failed. Server returned: {error_detail}")
+                        
+                        if e.response.status_code == 500:
+                            st.error(f"Sign up failed. Server returned: {error_detail}")
+                            if st.session_state.show_debug:
+                                st.exception(e)
+                        elif e.response.status_code == 400:
+                            st.error(f"Sign up failed: {error_detail}")
+                        else:
+                            st.error(f"Sign up failed. Server returned: {error_detail}")
+                            if st.session_state.show_debug:
+                                st.text(f"Details: {e.response.text}")
                     except requests.exceptions.RequestException as e:
                         st.error(f"Connection failed. Is the backend running? Error: {e}")
+                        if st.session_state.show_debug:
+                            st.exception(e)
                 else:
                     st.warning("Please enter both email and password.")
