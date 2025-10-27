@@ -136,11 +136,3 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("📋 View API Docs", use_container_width=True):
         st.markdown(f"Visit: [{BACKEND_URL}/docs]({BACKEND_URL}/docs)")
-
-with col2:
-    if st.button("🧪 Test Backend", use_container_width=True):
-        st.code(f"python scripts/test_backend_connection.py")
-
-with col3:
-    if st.button("📚 Setup Guide", use_container_width=True):
-        st.markdown("Check: `BACKEND_SETUP.md` file")

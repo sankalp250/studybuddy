@@ -19,12 +19,42 @@ from studybuddy.core import srs_logic
 
 router = APIRouter()
 
-# --- Load the working agents at startup ---
-daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
-leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
-flashcard_agent = create_flashcard_agent(model_name="llama-3.1-8b-instant")
-resume_agent = create_resume_agent(model_name="llama-3.1-8b-instant")
-interview_agent = create_interview_agent(model_name="llama-3.1-8b-instant")
+# --- Lazy load agents to avoid startup errors ---
+_daily_digest_agent = None
+_leetcode_agent = None
+_flashcard_agent = None
+_resume_agent = None
+_interview_agent = None
+
+def get_daily_digest_agent():
+    global _daily_digest_agent
+    if _daily_digest_agent is None:
+        _daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
+    return _daily_digest_agent
+
+def get_leetcode_agent():
+    global _leetcode_agent
+    if _leetcode_agent is None:
+        _leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
+    return _leetcode_agent
+
+def get_flashcard_agent():
+    global _flashcard_agent
+    if _flashcard_agent is None:
+        _flashcard_agent = create_flashcard_agent(model_name="llama-3.1-8b-instant")
+    return _flashcard_agent
+
+def get_resume_agent():
+    global _resume_agent
+    if _resume_agent is None:
+        _resume_agent = create_resume_agent(model_name="llama-3.1-8b-instant")
+    return _resume_agent
+
+def get_interview_agent():
+    global _interview_agent
+    if _interview_agent is None:
+        _interview_agent = create_interview_agent(model_name="llama-3.1-8b-instant")
+    return _interview_agent
 
 # --- User and Todo Endpoints (WORKING) ---
 @router.post("/users/", response_model=schemas.User, status_code=status.HTTP_201_CREATED, tags=["Users"])
@@ -73,7 +103,8 @@ def agent_chat(
         system_prompt = f"You are an expert AI study assistant specializing in interview preparation. Your goal is to help users prepare for interviews by asking personalized questions based on their resume and study topics.{resume_context}"
         
         # Use the interview agent instead of daily_digest_agent
-        response = interview_agent(request.messages, resume_context)
+        agent = get_interview_agent()
+        response = agent(request.messages, resume_context)
         return schemas.AgentResponse(response=response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -86,7 +117,8 @@ def create_daily_digest(request: schemas.DailyDigestRequest):
         # Use the daily digest agent to generate content
         # The agent expects a messages list with HumanMessage
         from langchain_core.messages import HumanMessage
-        result = daily_digest_agent.invoke({"messages": [HumanMessage(content=request.query)]})
+        agent = get_daily_digest_agent()
+        result = agent.invoke({"messages": [HumanMessage(content=request.query)]})
         
         # Extract the final response from the agent
         final_message = result["messages"][-1]
@@ -102,7 +134,8 @@ def generate_leetcode_problem(request: schemas.LeetCodeRequest):
     """Takes a topic and difficulty, runs the LeetCode agent, and returns a Markdown problem."""
     try:
         problem_input = {"topic": request.topic, "difficulty": request.difficulty}
-        problem_markdown = leetcode_agent.invoke(problem_input)
+        agent = get_leetcode_agent()
+        problem_markdown = agent.invoke(problem_input)
         return schemas.AgentResponse(response=problem_markdown)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
@@ -180,7 +213,8 @@ def generate_and_save_flashcards(
     """
     try:
         # Step 1: Run the flashcard generation agent
-        ai_response = flashcard_agent(request.text_content)
+        agent = get_flashcard_agent()
+        ai_response = agent(request.text_content)
         
         # Step 2: Parse the AI response (should be JSON)
         import json
@@ -235,7 +269,8 @@ def upload_resume(
     """Uploads and summarizes a user's resume."""
     try:
         # Generate summary using AI agent
-        summary = resume_agent(request.text_content)
+        agent = get_resume_agent()
+        summary = agent(request.text_content)
         
         # Update user's resume summary in database
         current_user.resume_summary = summary
