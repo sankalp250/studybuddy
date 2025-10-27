@@ -7,8 +7,20 @@ import os
 st.set_page_config(page_title="My Account", page_icon="👤", layout="centered")
 
 # --- Get backend URL from session state or use fallback ---
-BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
-BASE_API_URL = f"{BASE_API_URL}/api"
+BACKEND_BASE = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+BASE_API_URL = f"{BACKEND_BASE}/api"
+
+# Debug: Show which URL is being used
+if "show_debug" not in st.session_state:
+    st.session_state.show_debug = False
+
+# Toggle for debugging
+with st.sidebar:
+    if st.checkbox("Show Debug Info"):
+        st.session_state.show_debug = True
+        st.info(f"Backend URL: {BACKEND_BASE}")
+        st.info(f"API URL: {BASE_API_URL}")
+        st.info(f"Token URL: {TOKEN_URL}")
 
 TOKEN_URL = f"{BASE_API_URL}/token"
 USERS_URL = f"{BASE_API_URL}/users/"
@@ -128,6 +140,12 @@ else:
                     }
                     try:
                         response = requests.post(TOKEN_URL, data=login_data, timeout=10)
+                        
+                        # Show detailed error information
+                        if st.session_state.show_debug:
+                            st.info(f"Response Status: {response.status_code}")
+                            st.info(f"Response Text: {response.text}")
+                        
                         response.raise_for_status() # Raise an error for bad responses
                         
                         token_data = response.json()
@@ -138,10 +156,19 @@ else:
                     except requests.exceptions.HTTPError as e:
                         if e.response.status_code == 401:
                             st.error("Incorrect email or password.")
+                        elif e.response.status_code == 500:
+                            error_detail = e.response.text
+                            st.error(f"Server error (500): {error_detail}")
+                            if st.session_state.show_debug:
+                                st.exception(e)
                         else:
                             st.error(f"Login failed. Server returned: {e.response.status_code}")
+                            if st.session_state.show_debug:
+                                st.text(f"Details: {e.response.text}")
                     except requests.exceptions.RequestException as e:
                         st.error(f"Connection failed. Is the backend server running? Error: {e}")
+                        if st.session_state.show_debug:
+                            st.exception(e)
                 else:
                     st.warning("Please enter both email and password.")
 
