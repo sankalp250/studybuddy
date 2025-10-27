@@ -2,6 +2,7 @@
 
 import streamlit as st
 import requests
+import os
 
 # --- Page Configuration ---
 st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide")
@@ -12,8 +13,10 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
     st.stop()
 
-# --- Backend API URLs ---
-API_URL = "http://localhost:8000/api/daily-digest/"
+# --- Get backend URL from session state or use fallback ---
+BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+BASE_API_URL = f"{BASE_API_URL}/api"
+API_URL = f"{BASE_API_URL}/daily-digest/"
 
 # --- Page Title & Description ---
 st.title("📰 AI-Powered Daily Digest")

@@ -2,11 +2,14 @@
 
 import streamlit as st
 import requests
+import os
 
 st.set_page_config(page_title="My Account", page_icon="👤", layout="centered")
 
-# --- API URLs ---
-BASE_API_URL = "http://127.0.0.1:8000/api"
+# --- Get backend URL from session state or use fallback ---
+BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+BASE_API_URL = f"{BASE_API_URL}/api"
+
 TOKEN_URL = f"{BASE_API_URL}/token"
 USERS_URL = f"{BASE_API_URL}/users/"
 

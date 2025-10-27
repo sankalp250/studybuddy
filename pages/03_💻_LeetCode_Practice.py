@@ -3,6 +3,7 @@
 import streamlit as st
 import requests
 import time
+import os
 
 st.set_page_config(page_title="LeetCode Practice", page_icon="💻", layout="wide")
 
@@ -12,7 +13,10 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
     st.stop()
 
-API_URL = "http://127.0.0.1:8000/api/generate-leetcode/"
+# --- Get backend URL from session state or use fallback ---
+BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+BASE_API_URL = f"{BASE_API_URL}/api"
+API_URL = f"{BASE_API_URL}/generate-leetcode/"
 
 st.title("💻 Brain-Sharp LeetCode Generator")
 st.markdown("Generate a set of AI-created coding problems to sharpen your skills.")
