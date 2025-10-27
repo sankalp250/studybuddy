@@ -9,6 +9,8 @@ st.set_page_config(page_title="My Account", page_icon="👤", layout="centered")
 # --- Get backend URL from session state or use fallback ---
 BACKEND_BASE = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
 BASE_API_URL = f"{BACKEND_BASE}/api"
+TOKEN_URL = f"{BASE_API_URL}/token"
+USERS_URL = f"{BASE_API_URL}/users/"
 
 # Debug: Show which URL is being used
 if "show_debug" not in st.session_state:
@@ -21,9 +23,6 @@ with st.sidebar:
         st.info(f"Backend URL: {BACKEND_BASE}")
         st.info(f"API URL: {BASE_API_URL}")
         st.info(f"Token URL: {TOKEN_URL}")
-
-TOKEN_URL = f"{BASE_API_URL}/token"
-USERS_URL = f"{BASE_API_URL}/users/"
 
 # --- Initialize session state ---
 # This is Streamlit's way of "remembering" things across reruns.
