@@ -10,7 +10,21 @@ st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide"
 # --- Authentication Check ---
 if "access_token" not in st.session_state or st.session_state.access_token is None:
     st.error("🔒 Authentication required.")
-    st.info("The account page is disabled. Please set an access token in session to continue.")
+    with st.sidebar:
+        st.subheader("Authentication")
+        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+        new_backend = st.text_input("Backend URL", value=current_backend)
+        if new_backend and new_backend != current_backend:
+            st.session_state.backend_url = new_backend
+            st.success("Backend URL updated.")
+        token_val = st.text_input("Paste Access Token", type="password")
+        if st.button("Set Token"):
+            if token_val:
+                st.session_state.access_token = token_val
+                st.success("Token saved. Rerunning...")
+                st.rerun()
+            else:
+                st.warning("Enter a token first.")
     st.stop()
 
 # --- Get backend URL from session state or use fallback ---

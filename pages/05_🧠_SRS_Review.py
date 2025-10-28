@@ -48,8 +48,24 @@ st.title("🧠 Spaced Repetition Review")
 
 # Check for login first
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("🔒 Please log in to start a review session.")
-    st.page_link("pages/05_👤_Account.py", label="Go to Account Page")
+    st.error("🔒 Authentication required.")
+    with st.sidebar:
+        st.subheader("Authentication")
+        # Allow setting backend URL
+        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+        new_backend = st.text_input("Backend URL", value=current_backend)
+        if new_backend and new_backend != current_backend:
+            st.session_state.backend_url = new_backend
+            st.success("Backend URL updated.")
+        # Allow pasting an existing token
+        token_val = st.text_input("Paste Access Token", type="password")
+        if st.button("Set Token"):
+            if token_val:
+                st.session_state.access_token = token_val
+                st.success("Token saved. Rerunning...")
+                st.rerun()
+            else:
+                st.warning("Enter a token first.")
 else:
     auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
     
