@@ -12,6 +12,8 @@ BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "htt
 BASE_API_URL = f"{BASE_API_URL}/api"
 TODO_API_URL = f"{BASE_API_URL}/todos/"  # Updated URL
 AGENT_CHAT_URL = f"{BASE_API_URL}/agent/chat/"
+TOKEN_URL = f"{BASE_API_URL}/token"
+USERS_URL = f"{BASE_API_URL}/users/"
 
 # If the user isn't logged in, don't show the page.
 if "access_token" not in st.session_state or st.session_state.access_token is None:
@@ -23,7 +25,50 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
         if new_backend and new_backend != current_backend:
             st.session_state.backend_url = new_backend
             st.success("Backend URL updated.")
-        token_val = st.text_input("Paste Access Token", type="password")
+
+        # --- Quick Login ---
+        st.markdown("### Login")
+        login_email = st.text_input("Email", key="todo_login_email")
+        login_password = st.text_input("Password", type="password", key="todo_login_password")
+        if st.button("Login", use_container_width=True):
+            if login_email and login_password:
+                try:
+                    data = {"username": login_email, "password": login_password}
+                    resp = requests.post(TOKEN_URL, data=data, timeout=15)
+                    resp.raise_for_status()
+                    st.session_state.access_token = resp.json().get("access_token")
+                    st.session_state.user_email = login_email
+                    st.success("Logged in. Rerunning...")
+                    st.rerun()
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Login failed: {e}")
+            else:
+                st.warning("Enter email and password.")
+
+        # --- Quick Sign Up ---
+        st.markdown("### Sign Up")
+        signup_email = st.text_input("New Email", key="todo_signup_email")
+        signup_password = st.text_input("New Password", type="password", key="todo_signup_password")
+        if st.button("Create Account", use_container_width=True):
+            if signup_email and signup_password:
+                try:
+                    payload = {"email": signup_email, "password": signup_password}
+                    resp = requests.post(USERS_URL, json=payload, timeout=15)
+                    if resp.status_code == 201:
+                        st.success("Account created. Use Login above.")
+                    else:
+                        try:
+                            detail = resp.json().get("detail", resp.text)
+                        except Exception:
+                            detail = resp.text
+                        st.error(f"Sign up failed: {detail}")
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Sign up failed: {e}")
+            else:
+                st.warning("Enter email and password.")
+
+        st.markdown("### Or Paste Token")
+        token_val = st.text_input("Access Token", type="password")
         if st.button("Set Token"):
             if token_val:
                 st.session_state.access_token = token_val
