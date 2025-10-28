@@ -9,8 +9,8 @@ st.set_page_config(page_title="LeetCode Practice", page_icon="💻", layout="wid
 
 # --- Authentication Check ---
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("🔒 Please log in to access LeetCode Practice.")
-    st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
+    st.error("🔒 Authentication required.")
+    st.info("The account page is disabled. Please set an access token in session to continue.")
     st.stop()
 
 # --- Get backend URL from session state or use fallback ---

@@ -12,3 +12,7 @@ __pycache__/
 
 # Secret files
 .env
+
+# Database files
+*.db
+studybuddy.db

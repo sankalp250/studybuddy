@@ -15,8 +15,8 @@ AGENT_CHAT_URL = f"{BASE_API_URL}/agent/chat/"
 
 # If the user isn't logged in, don't show the page.
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("🔒 Please log in to view your TODO list.")
-    st.page_link("pages/04_👤_Account.py", label="Go to Account Page")
+    st.error("🔒 Authentication required.")
+    st.info("The account page is disabled. Please set an access token in session to continue.")
     st.stop()
 
 # We need to create the authorization header

@@ -7,6 +7,7 @@ from studybuddy.api import endpoints  # 1. IMPORT the endpoints module
 from alembic import command
 from alembic.config import Config
 import os
+from studybuddy.database.connection import Base, engine
 
 app = FastAPI(
     title="StudyBuddy AI",
@@ -31,6 +32,14 @@ async def startup_event():
     except Exception as e:
         print(f"⚠ Warning: Could not run database migrations: {e}")
         print("⚠ This might be okay if the database is already initialized.")
+    finally:
+        # As an extra safety net, ensure required tables exist even if Alembic didn't run.
+        # This is idempotent and safe on PostgreSQL/SQLite; it only creates missing tables.
+        try:
+            Base.metadata.create_all(bind=engine)
+            print("✓ Verified DB schema: ensured core tables exist")
+        except Exception as e:
+            print(f"⚠ Warning: Could not ensure tables via SQLAlchemy metadata: {e}")
 
 # 2. INCLUDE the router from the endpoints module.
 #    This makes all endpoints defined in 'endpoints.py' (like /users/)
