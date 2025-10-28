@@ -7,6 +7,16 @@
 
 > **An intelligent, full-stack application that transforms how students prepare for interviews and manage their learning journey through AI-powered personalization and scientifically-proven spaced repetition.**
 
+### 🌐 **Live Application**
+- **Frontend**: [https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/](https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/)
+- **Backend API**: [https://studybuddy-backend-xodg.onrender.com/](https://studybuddy-backend-xodg.onrender.com/)
+- **API Documentation**: [https://studybuddy-backend-xodg.onrender.com/docs](https://studybuddy-backend-xodg.onrender.com/docs)
+
+### 🐳 **Docker Image**
+```bash
+docker pull sankalp250/studybuddy-backend
+```
+
 ---
 
 ## 🌟 Overview
@@ -146,15 +156,20 @@ StudyBuddy AI is a comprehensive learning platform that combines cutting-edge AI
    uvicorn main:app --reload --host 127.0.0.1 --port 8000
    ```
    
-   **Terminal 2 (Frontend):**
-   ```bash
-   streamlit run dashboard.py
-   ```
+**Terminal 2 (Frontend):**
+```bash
+streamlit run dashboard.py
+```
 
 8. **Access the application**
    - Frontend: http://localhost:8501
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
+
+### **🌐 Or Use the Live Application**
+- **Frontend**: [https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/](https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/)
+- **Backend API**: [https://studybuddy-backend-xodg.onrender.com/](https://studybuddy-backend-xodg.onrender.com/)
+- **API Documentation**: [https://studybuddy-backend-xodg.onrender.com/docs](https://studybuddy-backend-xodg.onrender.com/docs)
 
 ---
 
@@ -270,17 +285,16 @@ pytest --cov=studybuddy
 
 ## 🚀 Deployment
 
-### **Production Deployment Options**
+### **Current Production Deployment**
+- **Frontend**: Streamlit Community Cloud ([Live App](https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/))
+- **Backend**: Render ([Live API](https://studybuddy-backend-xodg.onrender.com/))
+- **Database**: PostgreSQL on Render
+- **Docker**: [sankalp250/studybuddy-backend](https://hub.docker.com/r/sankalp250/studybuddy-backend)
 
-#### **Option 1: Full-Stack on Render (Recommended)**
-- Backend: Dockerized FastAPI on Render
-- Database: PostgreSQL on Render
-- Frontend: Streamlit Community Cloud
-
-#### **Option 2: Hybrid Deployment**
-- Backend: Railway or Heroku
-- Database: Supabase or PlanetScale
-- Frontend: Streamlit Community Cloud
+### **Deployment Steps**
+1. Backend is deployed on Render with auto-deploy from GitHub
+2. Frontend is deployed on Streamlit Cloud with linked GitHub repository
+3. Database migrations run automatically on backend startup
 
 ### **Environment Variables for Production**
 ```env
