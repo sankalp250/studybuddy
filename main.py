@@ -22,6 +22,12 @@ async def startup_event():
     Initialize database tables using Alembic migrations on startup.
     This ensures tables exist before handling any requests.
     """
+    import asyncio
+    # Run migrations in background to avoid blocking server startup
+    asyncio.create_task(run_migrations_async())
+
+async def run_migrations_async():
+    """Run database migrations asynchronously."""
     try:
         # Configure Alembic
         alembic_cfg = Config("alembic.ini")

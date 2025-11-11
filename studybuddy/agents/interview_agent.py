@@ -14,9 +14,17 @@ def create_interview_agent(model_name: str = "llama-3.1-8b-instant"):
         # Convert messages to a single prompt
         conversation_text = ""
         for msg in messages:
-            if hasattr(msg, 'content'):
+            # Handle both dictionary and object formats
+            if isinstance(msg, dict):
+                role = msg.get('role', 'user')
+                content = msg.get('content', '')
+            else:
+                # Handle object format
                 role = getattr(msg, 'role', 'user') if hasattr(msg, 'role') else 'user'
-                conversation_text += f"{role}: {msg.content}\n"
+                content = getattr(msg, 'content', '') if hasattr(msg, 'content') else ''
+            
+            if content:
+                conversation_text += f"{role}: {content}\n"
         
         prompt = f"""You are an expert AI interview preparation assistant. Your role is to help users prepare for interviews by:
 

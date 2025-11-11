@@ -13,6 +13,12 @@ from studybuddy.agents.leetcode_agent import create_leetcode_agent
 from studybuddy.agents.flashcard_agent import create_flashcard_agent
 from studybuddy.agents.resume_agent import create_resume_agent
 from studybuddy.agents.interview_agent import create_interview_agent
+# Optional RAG import - fallback to simple agent if not available
+try:
+    from studybuddy.agents.interview_agent_rag import prepare_interview_with_rag
+except ImportError:
+    prepare_interview_with_rag = None
+from studybuddy.tools.rag_utils import store_resume
 from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 from studybuddy.core import srs_logic
@@ -107,19 +113,59 @@ def agent_chat(
     db: Session = Depends(connection.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
+    """
+    Chat endpoint with RAG-based personalized interview questions.
+    Uses LangGraph agent to retrieve relevant resume context and generate personalized questions.
+    """
     try:
-        # Get user's resume summary if available
+        # Extract study topic from request or infer from messages
+        study_topic = request.study_topic
+        if not study_topic:
+            # Try to infer from the first user message
+            for msg in request.messages:
+                if msg.role == "user" and msg.content:
+                    # Look for topic hints in the message
+                    # This is a fallback - ideally the frontend should send study_topic
+                    study_topic = "Interview Preparation"  # Default topic
+                    break
+            if not study_topic:
+                study_topic = "Interview Preparation"
+        
+        # Check if user has a resume uploaded (for RAG)
+        has_resume = current_user.resume_summary is not None
+        
+        if has_resume and prepare_interview_with_rag is not None:
+            # Use RAG-based LangGraph agent for personalized questions
+            try:
+                response = prepare_interview_with_rag(
+                    user_id=current_user.id,
+                    study_topic=study_topic,
+                    messages=[{"role": m.role, "content": m.content} for m in request.messages],
+                    model_name="llama-3.1-8b-instant"
+                )
+                return schemas.AgentResponse(response=response)
+            except Exception as rag_error:
+                # Fallback to non-RAG agent if RAG fails
+                print(f"RAG agent failed, falling back to simple agent: {rag_error}")
+                import traceback
+                print(traceback.format_exc())
+        
+        # Fallback to simple interview agent (no RAG)
         resume_context = ""
         if current_user.resume_summary:
             resume_context = f"\n\nUSER'S RESUME SUMMARY:\n{current_user.resume_summary}\n\nIMPORTANT: When asking questions about projects or experiences, reference specific details from the resume above. Personalize the interview preparation to match the user's actual background."
         
-        system_prompt = f"You are an expert AI study assistant specializing in interview preparation. Your goal is to help users prepare for interviews by asking personalized questions based on their resume and study topics.{resume_context}"
-        
-        # Use the interview agent instead of daily_digest_agent
         agent = get_interview_agent()
-        response = agent(request.messages, resume_context)
+        response = agent(
+            [{"role": m.role, "content": m.content} for m in request.messages],
+            resume_context
+        )
         return schemas.AgentResponse(response=response)
+        
     except Exception as e:
+        import traceback
+        print(f"Agent chat failed: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Daily Digest Endpoint ---
@@ -301,21 +347,40 @@ def upload_resume(
     db: Session = Depends(connection.get_db),
     current_user: models.User = Depends(security.get_current_user)
 ):
-    """Uploads and summarizes a user's resume."""
+    """Uploads and summarizes a user's resume, then stores it in vector database for RAG."""
     try:
         # Generate summary using AI agent
         agent = get_resume_agent()
         summary = agent(request.text_content)
+        
+        # Store resume in vector database for RAG retrieval
+        try:
+            num_chunks = store_resume(
+                user_id=current_user.id,
+                resume_text=request.text_content,
+                resume_summary=summary
+            )
+            print(f"Stored {num_chunks} resume chunks in vector database for user {current_user.id}")
+        except Exception as rag_error:
+            # Log error but don't fail the request
+            print(f"Warning: Could not store resume in vector DB: {rag_error}")
+            print("Resume summary will still be saved, but RAG retrieval may not work.")
         
         # Update user's resume summary in database
         current_user.resume_summary = summary
         db.commit()
         db.refresh(current_user)
         
-        return {"detail": "Resume uploaded and summarized successfully!", "summary": summary}
+        return {
+            "detail": "Resume uploaded and summarized successfully!",
+            "summary": summary,
+            "rag_enabled": num_chunks > 0 if 'num_chunks' in locals() else False
+        }
     
     except Exception as e:
+        import traceback
         print(f"Resume upload failed: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to process resume: {str(e)}")
 
 @router.get("/resume-summary/", response_model=schemas.ResumeSummary, tags=["Resume"])

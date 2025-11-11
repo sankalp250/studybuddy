@@ -1,0 +1,162 @@
+"""RAG utilities for resume storage and retrieval using vector database."""
+import os
+from typing import List, Optional
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_core.documents import Document
+
+# Global vector store and embeddings (lazy-loaded)
+_vector_store: Optional[Chroma] = None
+_embeddings: Optional[HuggingFaceEmbeddings] = None
+
+def get_embeddings():
+    """Get or create the embeddings model."""
+    global _embeddings
+    if _embeddings is None:
+        # Use a lightweight, fast embedding model
+        _embeddings = HuggingFaceEmbeddings(
+            model_name="all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'},  # Use CPU to avoid GPU requirements
+            encode_kwargs={'normalize_embeddings': True}
+        )
+    return _embeddings
+
+def get_vector_store(user_id: int, persist_directory: Optional[str] = None):
+    """
+    Get or create a vector store for a specific user.
+    Each user gets their own collection in ChromaDB.
+    """
+    global _vector_store
+    
+    if persist_directory is None:
+        # Store vector databases in a local directory
+        persist_directory = os.path.join(os.getcwd(), "chroma_db", f"user_{user_id}")
+        os.makedirs(persist_directory, exist_ok=True)
+    
+    # Create a user-specific collection name
+    collection_name = f"resume_user_{user_id}"
+    
+    embeddings = get_embeddings()
+    
+    # Create or load the vector store
+    _vector_store = Chroma(
+        persist_directory=persist_directory,
+        embedding_function=embeddings,
+        collection_name=collection_name
+    )
+    
+    return _vector_store
+
+def store_resume(user_id: int, resume_text: str, resume_summary: Optional[str] = None):
+    """
+    Store resume text in the vector database.
+    Splits the resume into chunks and stores them with metadata.
+    """
+    # Get the vector store for this user
+    vector_store = get_vector_store(user_id)
+    
+    # Delete existing resume chunks for this user (to allow re-upload)
+    try:
+        # Get all existing documents
+        existing_docs = vector_store.get()
+        if existing_docs and existing_docs.get('ids'):
+            # Delete all existing documents
+            vector_store.delete(ids=existing_docs['ids'])
+    except Exception as e:
+        # If collection doesn't exist or is empty, that's fine
+        print(f"Note: Could not clear existing resume chunks: {e}")
+    
+    # Split resume into chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        length_function=len,
+        separators=["\n\n", "\n", ". ", " ", ""]
+    )
+    
+    # Create documents
+    documents = []
+    
+    # Add the full resume text
+    resume_chunks = text_splitter.split_text(resume_text)
+    for i, chunk in enumerate(resume_chunks):
+        documents.append(Document(
+            page_content=chunk,
+            metadata={
+                "user_id": user_id,
+                "chunk_index": i,
+                "source": "resume",
+                "type": "resume_content"
+            }
+        ))
+    
+    # Add the summary as a separate document for better retrieval
+    if resume_summary:
+        summary_chunks = text_splitter.split_text(resume_summary)
+        for i, chunk in enumerate(summary_chunks):
+            documents.append(Document(
+                page_content=chunk,
+                metadata={
+                    "user_id": user_id,
+                    "chunk_index": i,
+                    "source": "resume_summary",
+                    "type": "summary"
+                }
+            ))
+    
+    # Add documents to vector store
+    if documents:
+        vector_store.add_documents(documents)
+        vector_store.persist()
+    
+    return len(documents)
+
+def retrieve_relevant_resume_chunks(user_id: int, query: str, k: int = 3) -> List[Document]:
+    """
+    Retrieve relevant resume chunks based on a query.
+    This is the RAG retrieval step.
+    """
+    vector_store = get_vector_store(user_id)
+    
+    # Perform similarity search
+    try:
+        docs = vector_store.similarity_search(query, k=k)
+        return docs
+    except Exception as e:
+        print(f"Error retrieving resume chunks: {e}")
+        # Return empty list if retrieval fails
+        return []
+
+def get_resume_context_for_topic(user_id: int, study_topic: str, k: int = 3) -> str:
+    """
+    Get relevant resume context for a study topic.
+    Returns a formatted string with relevant resume chunks.
+    """
+    # Retrieve relevant chunks
+    chunks = retrieve_relevant_resume_chunks(user_id, study_topic, k=k)
+    
+    if not chunks:
+        return ""
+    
+    # Format the context
+    context_parts = []
+    for i, chunk in enumerate(chunks, 1):
+        chunk_type = chunk.metadata.get("type", "resume_content")
+        context_parts.append(f"[Resume Context {i} - {chunk_type}]:\n{chunk.page_content}")
+    
+    return "\n\n".join(context_parts)
+
+def delete_user_resume(user_id: int):
+    """Delete all resume chunks for a user."""
+    try:
+        vector_store = get_vector_store(user_id)
+        existing_docs = vector_store.get()
+        if existing_docs and existing_docs.get('ids'):
+            vector_store.delete(ids=existing_docs['ids'])
+            vector_store.persist()
+        return True
+    except Exception as e:
+        print(f"Error deleting user resume: {e}")
+        return False
+

@@ -32,6 +32,7 @@ class ChatMessage(BaseModel):
     content: str
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+    study_topic: str | None = None  # Optional study topic for personalized questions
 
 # --- Daily Digest Schema ---
 class DailyDigestRequest(BaseModel):
