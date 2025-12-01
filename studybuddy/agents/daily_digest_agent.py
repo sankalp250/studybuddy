@@ -7,7 +7,6 @@ from langgraph.graph import StateGraph, END
 from langchain_groq import ChatGroq
 
 from studybuddy.core.config import settings
-# <<< CHANGE 1: Import the new 'search_tool' instead of 'search_and_browse'
 from studybuddy.tools.web_tools import search_tool
 
 class AgentState(TypedDict):
@@ -27,10 +26,24 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
     tools = [search_tool]
 
 
-    # --- Agent Nodes (Your robust tool-calling logic is perfect and needs no changes) ---
+    # --- Agent Nodes ---
     def call_model(state: AgentState):
         """Invokes the LLM with the current message history."""
-        response = llm_with_tools.invoke(state["messages"])
+        messages = list(state["messages"])
+        
+        # Add system message to force correct tool usage
+        system_prompt = (
+            "You are a helpful AI assistant. "
+            "You have access to a search tool called 'tavily_search'. "
+            "ALWAYS use 'tavily_search' to search the web. "
+            "Do NOT use 'brave_search' or any other tool name."
+        )
+        
+        # Check if system message already exists
+        if not isinstance(messages[0], SystemMessage):
+            messages.insert(0, SystemMessage(content=system_prompt))
+            
+        response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
 
     def call_tool(state: AgentState):
@@ -44,7 +57,7 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
                 
                 tool_found = False
                 for tool in tools:
-                    # The Tavily tool's name is 'tavily_search_results_json'
+                    # The Tavily tool's name is 'tavily_search'
                     if tool.name == tool_name:
                         try:
                             result = tool.invoke(tool_call.get("args"))
@@ -57,11 +70,27 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
                         break
                 
                 if not tool_found:
-                    tool_results.append(ToolMessage(content=f"Tool '{tool_name}' not found.", tool_call_id=tool_call.get("id")))
+                    # Fallback: if model tries to call 'brave_search', try to use Tavily instead if args match
+                    if tool_name == 'brave_search':
+                        print(f"--- Redirecting 'brave_search' call to 'tavily_search' ---")
+                        try:
+                            # Tavily expects 'query' arg, brave_search usually uses 'q' or 'query'
+                            args = tool_call.get("args")
+                            query = args.get('query') or args.get('q')
+                            if query:
+                                result = search_tool.invoke({"query": query})
+                                tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call.get("id")))
+                                tool_found = True
+                                print(f"--- Successfully redirected and called Tavily ---")
+                        except Exception as e:
+                            print(f"--- Redirect failed: {e} ---")
+
+                if not tool_found:
+                    tool_results.append(ToolMessage(content=f"Tool '{tool_name}' not found. Please use 'tavily_search'.", tool_call_id=tool_call.get("id")))
         
         return {"messages": tool_results}
 
-    # --- Conditional Edge (No changes needed) ---
+    # --- Conditional Edge ---
     def should_continue(state: AgentState):
         """Determines the next step."""
         last_message = state["messages"][-1]
@@ -70,7 +99,7 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
         else:
             return END
 
-    # --- Build and Compile the Graph (No changes needed) ---
+    # --- Build and Compile the Graph ---
     workflow = StateGraph(AgentState)
     workflow.add_node("call_model", call_model)
     workflow.add_node("call_tool", call_tool)
@@ -87,9 +116,6 @@ if __name__ == "__main__":
     daily_digest_agent = create_daily_digest_agent()
     
     print("\n--- Agent is compiled. Starting a new stream... ---\n")
-
-    # <<< CHANGE 3: The SystemMessage is no longer needed. The LLM is smart enough
-    # to use the Tavily tool based on its description alone.
     
     initial_input = {"messages": [HumanMessage(content="What is the latest news about AI? Summarize the top 2-3 stories in a few sentences each.")]}
     
