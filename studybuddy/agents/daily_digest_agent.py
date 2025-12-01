@@ -52,21 +52,6 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
         tool_results = []
         if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
             for tool_call in last_message.tool_calls:
-                tool_name = tool_call.get("name")
-                print(f"--- Attempting to call tool: {tool_name} ---")
-                
-                tool_found = False
-                for tool in tools:
-                    # The Tavily tool's name is 'tavily_search'
-                    if tool.name == tool_name:
-                        try:
-                            result = tool.invoke(tool_call.get("args"))
-                            tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call.get("id")))
-                            tool_found = True
-                            print(f"--- Successfully called tool: {tool_name} ---")
-                        except Exception as e:
-                            tool_results.append(ToolMessage(content=f"Error: {e}", tool_call_id=tool_call.get("id")))
-                            tool_found = True
                         break
                 
                 if not tool_found:
