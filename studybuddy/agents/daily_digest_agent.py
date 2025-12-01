@@ -49,30 +49,70 @@ def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_
     def call_tool(state: AgentState):
         """Executes any tool calls requested by the LLM."""
         last_message = state["messages"][-1]
-        tool_results = []
-        if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
-            for tool_call in last_message.tool_calls:
-                        break
-                
-                if not tool_found:
-                    # Fallback: if model tries to call 'brave_search', try to use Tavily instead if args match
-                    if tool_name == 'brave_search':
-                        print(f"--- Redirecting 'brave_search' call to 'tavily_search' ---")
-                        try:
-                            # Tavily expects 'query' arg, brave_search usually uses 'q' or 'query'
-                            args = tool_call.get("args")
-                            query = args.get('query') or args.get('q')
-                            if query:
-                                result = search_tool.invoke({"query": query})
-                                tool_results.append(ToolMessage(content=str(result), tool_call_id=tool_call.get("id")))
-                                tool_found = True
-                                print(f"--- Successfully redirected and called Tavily ---")
-                        except Exception as e:
-                            print(f"--- Redirect failed: {e} ---")
+        tool_results: List[ToolMessage] = []
 
-                if not tool_found:
-                    tool_results.append(ToolMessage(content=f"Tool '{tool_name}' not found. Please use 'tavily_search'.", tool_call_id=tool_call.get("id")))
-        
+        # ChatGroq returns tool calls on the message as a list of dicts
+        if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+            for tool_call in last_message.tool_calls:
+                tool_name = tool_call.get("name")
+                args = tool_call.get("args") or {}
+                tool_id = tool_call.get("id")
+
+                # Normal path: tavily_search
+                if tool_name == "tavily_search":
+                    try:
+                        result = search_tool.invoke(args)
+                        tool_results.append(
+                            ToolMessage(content=str(result), tool_call_id=tool_id)
+                        )
+                    except Exception as e:
+                        tool_results.append(
+                            ToolMessage(
+                                content=f"Error calling tavily_search: {e}",
+                                tool_call_id=tool_id,
+                            )
+                        )
+                    continue
+
+                # Fallback: redirect brave_search to tavily_search when possible
+                if tool_name == "brave_search":
+                    print("--- Redirecting 'brave_search' call to 'tavily_search' ---")
+                    try:
+                        query = args.get("query") or args.get("q")
+                        if query:
+                            result = search_tool.invoke({"query": query})
+                            tool_results.append(
+                                ToolMessage(content=str(result), tool_call_id=tool_id)
+                            )
+                            print("--- Successfully redirected and called Tavily ---")
+                        else:
+                            tool_results.append(
+                                ToolMessage(
+                                    content="No query provided for brave_search/tavily_search.",
+                                    tool_call_id=tool_id,
+                                )
+                            )
+                    except Exception as e:
+                        print(f"--- Redirect failed: {e} ---")
+                        tool_results.append(
+                            ToolMessage(
+                                content=f"Error redirecting brave_search to tavily_search: {e}",
+                                tool_call_id=tool_id,
+                            )
+                        )
+                    continue
+
+                # Unknown tool name
+                tool_results.append(
+                    ToolMessage(
+                        content=(
+                            f"Tool '{tool_name}' not found. "
+                            "Please use 'tavily_search' for web search."
+                        ),
+                        tool_call_id=tool_id,
+                    )
+                )
+
         return {"messages": tool_results}
 
     # --- Conditional Edge ---
