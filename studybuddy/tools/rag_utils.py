@@ -1,4 +1,13 @@
-"""RAG utilities for resume storage and retrieval using vector database."""
+"""RAG utilities for resume storage and retrieval using vector database.
+
+On small deployments (like Render free tier), full RAG can be too memory-heavy
+because it needs to load an embeddings model. To keep the app usable there,
+we allow RAG to be disabled via the ENABLE_RAG environment variable.
+
+When ENABLE_RAG is not "true", calls to store/retrieve resume context will
+gracefully no-op or return empty results, while the core resume summary feature
+continues to work.
+"""
 import os
 from typing import List, Optional
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -6,19 +15,26 @@ from langchain_community.vectorstores import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
+# Toggle to fully disable RAG on low-memory deployments
+ENABLE_RAG = os.getenv("ENABLE_RAG", "false").lower() == "true"
+
 # Global vector store and embeddings (lazy-loaded)
 _vector_store: Optional[Chroma] = None
 _embeddings: Optional[HuggingFaceEmbeddings] = None
 
+
 def get_embeddings():
-    """Get or create the embeddings model."""
+    """Get or create the embeddings model (if RAG is enabled)."""
+    if not ENABLE_RAG:
+        raise RuntimeError("RAG is disabled (ENABLE_RAG is not set to 'true').")
+
     global _embeddings
     if _embeddings is None:
         # Use a lightweight, fast embedding model
         _embeddings = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2",
-            model_kwargs={'device': 'cpu'},  # Use CPU to avoid GPU requirements
-            encode_kwargs={'normalize_embeddings': True}
+            model_kwargs={"device": "cpu"},  # Use CPU to avoid GPU requirements
+            encode_kwargs={"normalize_embeddings": True},
         )
     return _embeddings
 
@@ -52,7 +68,15 @@ def store_resume(user_id: int, resume_text: str, resume_summary: Optional[str] =
     """
     Store resume text in the vector database.
     Splits the resume into chunks and stores them with metadata.
+
+    When RAG is disabled, this becomes a no-op and simply returns 0 so that
+    the rest of the app (resume summary, interview agent) keeps working
+    without loading heavy models into memory.
     """
+    if not ENABLE_RAG:
+        # RAG disabled – skip vector store writes
+        print("[RAG] store_resume called but RAG is disabled; skipping vector storage.")
+        return 0
     # Get the vector store for this user
     vector_store = get_vector_store(user_id)
     
@@ -115,8 +139,11 @@ def store_resume(user_id: int, resume_text: str, resume_summary: Optional[str] =
 def retrieve_relevant_resume_chunks(user_id: int, query: str, k: int = 3) -> List[Document]:
     """
     Retrieve relevant resume chunks based on a query.
-    This is the RAG retrieval step.
+    This is the RAG retrieval step. When RAG is disabled, returns an empty list.
     """
+    if not ENABLE_RAG:
+        print("[RAG] Retrieval requested but RAG is disabled; returning no chunks.")
+        return []
     vector_store = get_vector_store(user_id)
     
     # Perform similarity search

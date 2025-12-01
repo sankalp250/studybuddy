@@ -119,7 +119,12 @@ if st.button("🚀 Upload & Analyze Resume", type="primary", use_container_width
                     # Refresh the page to show updated summary
                     st.rerun()
                 else:
-                    error_detail = response.json().get("detail", response.text) if response.status_code != 200 else response.text
+                    # Handle non-JSON errors gracefully (e.g., 502 Bad Gateway HTML from Render)
+                    try:
+                        error_json = response.json()
+                        error_detail = error_json.get("detail", response.text)
+                    except Exception:
+                        error_detail = response.text or f"Status code: {response.status_code}"
                     st.error(f"❌ Failed to upload resume: {error_detail}")
                     
             except requests.exceptions.Timeout:

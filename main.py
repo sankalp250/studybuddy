@@ -1,6 +1,7 @@
 # In main.py
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from studybuddy.api import endpoints  # 1. IMPORT the endpoints module
 
 # Import for database initialization
@@ -13,6 +14,15 @@ app = FastAPI(
     title="StudyBuddy AI",
     description="An intelligent ecosystem for student productivity.",
     version="0.1.0"
+)
+
+# Add CORS middleware to allow frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific domains
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Initialize database on startup
