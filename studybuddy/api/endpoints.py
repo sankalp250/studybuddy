@@ -190,7 +190,11 @@ def create_daily_digest(
         else:
             return schemas.AgentResponse(response=str(final_message))
     except Exception as e:
+        import traceback
+        print(f"Daily digest error: {e}")
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to generate daily digest: {str(e)}")
+
 
 
 @router.post("/generate-leetcode/", response_model=schemas.AgentResponse, tags=["AI Agents"])
