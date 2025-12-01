@@ -170,7 +170,11 @@ def agent_chat(
 
 # --- Daily Digest Endpoint ---
 @router.post("/daily-digest/", response_model=schemas.AgentResponse, tags=["AI Agents"])
-def create_daily_digest(request: schemas.DailyDigestRequest):
+def create_daily_digest(
+    request: schemas.DailyDigestRequest,
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
     """Generate a daily digest for a given topic using the AI agent."""
     try:
         # Use the daily digest agent to generate content
@@ -187,6 +191,7 @@ def create_daily_digest(request: schemas.DailyDigestRequest):
             return schemas.AgentResponse(response=str(final_message))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate daily digest: {str(e)}")
+
 
 @router.post("/generate-leetcode/", response_model=schemas.AgentResponse, tags=["AI Agents"])
 def generate_leetcode_problem(request: schemas.LeetCodeRequest):
