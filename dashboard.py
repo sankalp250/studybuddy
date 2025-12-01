@@ -20,7 +20,7 @@ except:
 
 # Fallback to environment variable or localhost
 if not BACKEND_URL:
-    BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    BACKEND_URL = os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com")
 
 # Store in session state for use in pages
 st.session_state.backend_url = BACKEND_URL

@@ -12,7 +12,7 @@ st.set_page_config(
 )
 
 # Get backend URL from session state
-BACKEND_URL = st.session_state.get("backend_url", "http://127.0.0.1:8000")
+BACKEND_URL = st.session_state.get("backend_url", "https://studybuddy-huu6.onrender.com")
 UPLOAD_RESUME_URL = f"{BACKEND_URL}/api/upload-resume/"
 GET_RESUME_SUMMARY_URL = f"{BACKEND_URL}/api/resume-summary/"
 

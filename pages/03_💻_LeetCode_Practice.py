@@ -12,7 +12,7 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.error("🔒 Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
-        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
         new_backend = st.text_input("Backend URL", value=current_backend)
         if new_backend and new_backend != current_backend:
             st.session_state.backend_url = new_backend
@@ -28,7 +28,7 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.stop()
 
 # --- Get backend URL from session state or use fallback ---
-BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "http://127.0.0.1:8000"))
+BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
 BASE_API_URL = f"{BASE_API_URL}/api"
 API_URL = f"{BASE_API_URL}/generate-leetcode/"
 
