@@ -23,7 +23,14 @@ if not BACKEND_URL:
     BACKEND_URL = os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com")
 
 # Store in session state for use in pages
-st.session_state.backend_url = BACKEND_URL
+if "backend_url" not in st.session_state:
+    st.session_state.backend_url = BACKEND_URL
+
+# Auto-migrate localhost to Render URL for users who previously ran locally
+if st.session_state.backend_url and ("127.0.0.1" in st.session_state.backend_url or "localhost" in st.session_state.backend_url):
+    st.session_state.backend_url = "https://studybuddy-huu6.onrender.com"
+    st.rerun()
+
 
 BASE_URL = BACKEND_URL
 
