@@ -59,7 +59,7 @@ README.md
 .streamlit/
 
 # Alembic
-alembic/versions/*.py
+
 
 # Tests
 tests/
