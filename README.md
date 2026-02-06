@@ -9,8 +9,8 @@
 
 ### 🌐 **Live Application**
 - **Frontend**: [https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/](https://studybuddy-pswv2yg6aasmxvgcfkpdcs.streamlit.app/)
-- **Backend API**: [https://studybuddy-backend-xodg.onrender.com/](https://studybuddy-huu6.onrender.com)
-- **API Documentation**: [https://studybuddy-backend-xodg.onrender.com/docs](https://studybuddy-backend-xodg.onrender.com/docs)
+- **Backend API**: [https://studybuddy-huu6.onrender.com/](https://studybuddy-huu6.onrender.com/)
+- **API Documentation**: [https://studybuddy-huu6.onrender.com/docs](https://studybuddy-huu6.onrender.com/docs)
 
 ### 🐳 **Docker Image**
 ```bash
