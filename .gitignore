@@ -19,3 +19,6 @@ studybuddy.db
 
 # Vector Database
 chroma_db/
+
+# Private Docs
+INTERVIEW_PREP.md
