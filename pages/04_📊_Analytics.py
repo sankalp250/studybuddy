@@ -55,6 +55,13 @@ else:
                 st.plotly_chart(fig, use_container_width=True)
             else:
                 st.info("Start using the app to see your activity stats here!")
+        
+        elif response.status_code == 401:
+            st.warning("⚠️ Session expired or invalid. Please log in again.")
+            if st.button("Refresh Login"):
+                if "access_token" in st.session_state:
+                    del st.session_state.access_token
+                st.rerun()
                 
         else:
             st.error(f"Failed to fetch analytics. Status: {response.status_code}")
