@@ -1,42 +1,12 @@
 services:
-  # FastAPI backend deployed via Docker
   - type: web
-    name: studybuddy-backend
-    env: docker
-    plan: free
-    autoDeploy: true
-
-    dockerfilePath: ./Dockerfile
-    dockerCommand: ""  # use CMD from Dockerfile (`start.sh`)
-
-    healthCheckPath: /
-    # Render will route external traffic to this port inside the container
-    # (Dockerfile exposes 8000 and start.sh runs uvicorn on 0.0.0.0:8000)
+    name: studybuddy
+    env: python
+    region: ohio
+    buildCommand: pip install -r requirements.txt
+    startCommand: ./start.sh
     envVars:
-      # Database connection string comes from the managed Postgres instance below
-      - key: DATABASE_URL
-        fromDatabase:
-          name: studybuddy-db
-          property: connectionString
-
-      # Auth & security
-      - key: SECRET_KEY
-        generateValue: true
-      - key: ALGORITHM
-        value: HS256
-      - key: ACCESS_TOKEN_EXPIRE_MINUTES
-        value: "60"
-
-      # LLM & tools (set these in the Render dashboard)
-      - key: GROQ_API_KEY
-        sync: false
-      - key: TAVILY_API_KEY
-        sync: false
-
-databases:
-  - name: studybuddy-db
-    plan: free
-    databaseName: studybuddy_db
-    user: studybuddy_user
-
-
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: ENABLE_RAG
+        value: "false"

@@ -22,4 +22,4 @@ alembic upgrade head > /tmp/alembic.log 2>&1 || {
 echo "✓ Database migrations completed successfully"
 
 # Start the application
-exec uvicorn main:app --host 0.0.0.0 --port 8000
+exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
