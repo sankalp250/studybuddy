@@ -64,7 +64,7 @@ else:
                 st.rerun()
                 
         else:
-            st.error(f"Failed to fetch analytics. Status: {response.status_code}")
+            st.error(f"Failed to fetch analytics. Status: {response.status_code}. Detail: {response.text}")
             
     except Exception as e:
         st.error(f"Error connecting to backend: {e}")

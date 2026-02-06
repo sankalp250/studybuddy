@@ -89,7 +89,11 @@ def read_user_stats(
     current_user: models.User = Depends(security.get_current_user)
 ):
     """Retrieves statistics for the currently authenticated user."""
-    return crud.get_user_statistics(db=db, user_id=current_user.id)
+    try:
+        return crud.get_user_statistics(db=db, user_id=current_user.id)
+    except Exception as e:
+        print(f"Error extracting stats: {e}")
+        raise HTTPException(status_code=500, detail=f"Stats Error: {str(e)}")
 
 @router.post("/todos/", response_model=schemas.Todo, tags=["Todos"])
 def create_todo_for_user(
