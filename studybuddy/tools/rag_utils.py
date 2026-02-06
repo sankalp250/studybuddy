@@ -4,23 +4,22 @@ On small deployments (like Render free tier), full RAG can be too memory-heavy
 because it needs to load an embeddings model. To keep the app usable there,
 we allow RAG to be disabled via the ENABLE_RAG environment variable.
 
-When ENABLE_RAG is not "true", calls to store/retrieve resume context will
-gracefully no-op or return empty results, while the core resume summary feature
-continues to work.
+However, we have optimized this to use FastEmbed, which is much lighter than
+the previous PyTorch-based implementation.
 """
 import os
 from typing import List, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 from langchain_core.documents import Document
 
 # Toggle to fully disable RAG on low-memory deployments
-ENABLE_RAG = os.getenv("ENABLE_RAG", "false").lower() == "true"
+ENABLE_RAG = os.getenv("ENABLE_RAG", "true").lower() == "true"
 
 # Global vector store and embeddings (lazy-loaded)
 _vector_store: Optional[Chroma] = None
-_embeddings: Optional[HuggingFaceEmbeddings] = None
+_embeddings: Optional[FastEmbedEmbeddings] = None
 
 
 def get_embeddings():
@@ -30,11 +29,11 @@ def get_embeddings():
 
     global _embeddings
     if _embeddings is None:
-        # Use a lightweight, fast embedding model
-        _embeddings = HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2",
-            model_kwargs={"device": "cpu"},  # Use CPU to avoid GPU requirements
-            encode_kwargs={"normalize_embeddings": True},
+        # Use FastEmbed - lightweight and fast, no PyTorch required
+        _embeddings = FastEmbedEmbeddings(
+            model_name="BAAI/bge-small-en-v1.5", # High performance, small size
+            threads=None, # Use all available threads
+            cache_dir="./chroma_db/fastembed_cache" # Cache models locally
         )
     return _embeddings
 
@@ -132,7 +131,8 @@ def store_resume(user_id: int, resume_text: str, resume_summary: Optional[str] =
     # Add documents to vector store
     if documents:
         vector_store.add_documents(documents)
-        vector_store.persist()
+        # Chroma automatically persists, but we can be explicit if needed in older versions
+        # vector_store.persist() 
     
     return len(documents)
 
@@ -181,9 +181,7 @@ def delete_user_resume(user_id: int):
         existing_docs = vector_store.get()
         if existing_docs and existing_docs.get('ids'):
             vector_store.delete(ids=existing_docs['ids'])
-            vector_store.persist()
         return True
     except Exception as e:
         print(f"Error deleting user resume: {e}")
         return False
-

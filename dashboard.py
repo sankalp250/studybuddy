@@ -11,8 +11,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Use Render backend by default
-BACKEND_URL = "https://studybuddy-huu6.onrender.com"
+# Use Render backend by default, but allow override
+import os
+# Default to local if not specified, for easier local testing. 
+# In production, this env var should be set to the Render URL.
+BACKEND_URL = os.getenv("BACKEND_API_URL", "http://127.0.0.1:8000")
+# BACKEND_URL = "https://studybuddy-huu6.onrender.com"
 
 # Store in session state for use in pages
 if "backend_url" not in st.session_state:

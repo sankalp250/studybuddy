@@ -16,3 +16,6 @@ __pycache__/
 # Database files
 *.db
 studybuddy.db
+
+# Vector Database
+chroma_db/

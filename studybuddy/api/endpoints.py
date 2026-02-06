@@ -83,6 +83,14 @@ def register_user(user: schemas.UserCreate, db: Session = Depends(connection.get
             detail=f"Internal server error: {str(e)}"
         )
 
+@router.get("/users/me/stats", response_model=schemas.UserStats, tags=["Users"])
+def read_user_stats(
+    db: Session = Depends(connection.get_db),
+    current_user: models.User = Depends(security.get_current_user)
+):
+    """Retrieves statistics for the currently authenticated user."""
+    return crud.get_user_statistics(db=db, user_id=current_user.id)
+
 @router.post("/todos/", response_model=schemas.Todo, tags=["Todos"])
 def create_todo_for_user(
     todo: schemas.TodoCreate,

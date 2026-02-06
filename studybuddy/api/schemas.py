@@ -81,3 +81,11 @@ class TextContentRequest(BaseModel):
 
 class ResumeSummary(BaseModel):
     resume_summary: str
+
+class UserStats(BaseModel):
+    total_study_hours: float
+    total_flashcards: int
+    total_cards_reviewed: int
+    active_streak: int
+    total_todos: int
+    completed_todos: int

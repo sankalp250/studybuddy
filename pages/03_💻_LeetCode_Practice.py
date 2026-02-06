@@ -90,4 +90,27 @@ if st.session_state.leetcode_problems:
     for i, problem in enumerate(st.session_state.leetcode_problems):
         st.subheader(f"Problem #{i + 1}")
         st.markdown(problem, unsafe_allow_html=True)
+        
+        with st.expander("💡 Helper & Solution"):
+            if st.button(f"Explain Solution for Problem #{i + 1}", key=f"explain_{i}"):
+                with st.spinner("Analyzing problem and generating explanation..."):
+                    try:
+                        # Reuse the chat endpoint to explain the problem
+                        chat_payload = {
+                            "message": f"Please explain the solution and approach for this coding problem:\n\n{problem}",
+                            "agent_type": "leetcode_agent" # Use the coding expert agent
+                        }
+                        auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
+                        chat_api_url = f"{BASE_API_URL}/agent/chat/"
+                        
+                        resp = requests.post(chat_api_url, json=chat_payload, headers=auth_headers, timeout=60)
+                        resp.raise_for_status()
+                        explanation = resp.json().get("response", "No explanation received.")
+                        
+                        st.markdown("### 📝 Explanation & Approach")
+                        st.markdown(explanation)
+                        
+                    except Exception as e:
+                        st.error(f"Could not fetch explanation: {e}")
+        
         st.divider()

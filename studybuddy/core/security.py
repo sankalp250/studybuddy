@@ -11,6 +11,16 @@ from studybuddy.database import connection, crud, models
 from studybuddy.api import schemas
 
 # --- Password Hashing ---
+# FIX: Monkeypatch bcrypt to work with passlib (bcrypt >= 4.0.0 removed __about__)
+import bcrypt
+if not hasattr(bcrypt, "__about__"):
+    try:
+        from collections import namedtuple
+        Version = namedtuple("Version", ["__version__"])
+        bcrypt.__about__ = Version(__version__=bcrypt.__version__)
+    except Exception:
+        pass
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
