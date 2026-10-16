@@ -1,15 +1,15 @@
-# In pages/02_Ã°Å¸â€œÂ°_Daily_Digest.py
+# In pages/02_📰_Daily_Digest.py
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Configuration ---
-st.set_page_config(page_title="AI Daily Digest", page_icon="Ã°Å¸â€œÂ°", layout="wide")
+st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide")
 
 # --- Authentication Check ---
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("Ã°Å¸â€â€™ Authentication required.")
+    st.error("🔒 Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         current_backend = get_backend_url()
@@ -34,7 +34,7 @@ BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 API_URL = f"{BASE_API_URL}/daily-digest/"
 
 # --- Page Title & Description ---
-st.title("Ã°Å¸â€œÂ° AI-Powered Daily Digest")
+st.title("📰 AI-Powered Daily Digest")
 st.markdown("Enter any topic, and our advanced AI agent will search the web and generate a concise summary for you.")
 
 # --- User Input Section ---
@@ -53,7 +53,7 @@ if st.button("Generate Digest", type="primary"):
                 response = requests.post(API_URL, json=payload, headers=auth_headers, timeout=180)
                 response.raise_for_status()
                 result = response.json()
-                st.subheader("Ã°Å¸â€œÂ Here's Your AI-Generated Summary:")
+                st.subheader("📌 Here's Your AI-Generated Summary:")
                 st.markdown(result.get("response", "No response found."))
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to connect to the backend. Error: {e}")

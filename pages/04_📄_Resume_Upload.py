@@ -1,4 +1,4 @@
-# In pages/04_Ã°Å¸â€œâ€ž_Resume_Upload.py
+# In pages/04_📄_Resume_Upload.py
 
 import streamlit as st
 import requests
@@ -7,7 +7,7 @@ from studybuddy.tools.resume_parser import extract_text_from_upload
 # Page config
 st.set_page_config(
     page_title="Resume Upload - StudyBuddy AI",
-    page_icon="Ã°Å¸â€œâ€ž",
+    page_icon="📄",
     layout="wide"
 )
 
@@ -19,7 +19,7 @@ GET_RESUME_SUMMARY_URL = f"{BACKEND_URL}/api/resume-summary/"
 
 # Check authentication
 if "access_token" not in st.session_state or not st.session_state.access_token:
-    st.error("Ã°Å¸â€â€™ Please log in first from the Todo List page.")
+    st.error("🔒 Please log in first from the Todo List page.")
     st.info("Go to the Todo List page to create an account or log in.")
     st.stop()
 
@@ -27,7 +27,7 @@ if "access_token" not in st.session_state or not st.session_state.access_token:
 auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
 
 # Page title
-st.title("Ã°Å¸â€œâ€ž Resume Upload & Analysis")
+st.title("📄 Resume Upload & Analysis")
 st.markdown("Upload your resume to get personalized interview questions based on your experience!")
 
 # Fetch current resume summary if available
@@ -36,8 +36,8 @@ try:
     if summary_response.status_code == 200:
         current_summary = summary_response.json().get("resume_summary", "")
         if current_summary:
-            st.success("Ã¢Å“â€¦ You have a resume uploaded!")
-            with st.expander("Ã°Å¸â€œâ€¹ View Current Resume Summary", expanded=False):
+            st.success("✅ You have a resume uploaded!")
+            with st.expander("📋 View Current Resume Summary", expanded=False):
                 st.markdown(current_summary)
 except Exception as e:
     # User might not have a resume yet, that's okay
@@ -46,7 +46,7 @@ except Exception as e:
 st.divider()
 
 # Upload section
-st.header("Ã°Å¸â€œÂ¤ Upload Your Resume")
+st.header("📤 Upload Your Resume")
 
 col1, col2 = st.columns([2, 1])
 
@@ -58,7 +58,7 @@ with col1:
     )
 
 with col2:
-    st.markdown("### Ã°Å¸â€œÂ Or Paste Text")
+    st.markdown("### 📌 Or Paste Text")
     paste_text = st.text_area(
         "Paste your resume text here",
         height=150,
@@ -66,32 +66,32 @@ with col2:
     )
 
 # Process upload
-if st.button("Ã°Å¸Å¡â‚¬ Upload & Analyze Resume", type="primary", use_container_width=True):
+if st.button("🚀 Upload & Analyze Resume", type="primary", use_container_width=True):
     resume_text = None
     
     # Get text from file or paste
     if uploaded_file is not None:
-        with st.spinner("Ã°Å¸â€œâ€ž Extracting text from file..."):
+        with st.spinner("📄 Extracting text from file..."):
             try:
                 resume_text = extract_text_from_upload(uploaded_file)
-                st.success(f"Ã¢Å“â€¦ Extracted {len(resume_text)} characters from {uploaded_file.name}")
+                st.success(f"✅ Extracted {len(resume_text)} characters from {uploaded_file.name}")
             except Exception as e:
-                st.error(f"Ã¢ÂÅ’ Failed to extract text: {str(e)}")
+                st.error(f"❌ Failed to extract text: {str(e)}")
                 st.stop()
     elif paste_text:
         resume_text = paste_text
-        st.success(f"Ã¢Å“â€¦ Using pasted text ({len(resume_text)} characters)")
+        st.success(f"✅ Using pasted text ({len(resume_text)} characters)")
     else:
-        st.warning("Ã¢Å¡Â Ã¯Â¸Â Please upload a file or paste your resume text.")
+        st.warning("⚠️ Please upload a file or paste your resume text.")
         st.stop()
     
     if resume_text:
         # Show preview
-        with st.expander("Ã°Å¸â€˜â‚¬ Preview Resume Text", expanded=False):
+        with st.expander("👀 Preview Resume Text", expanded=False):
             st.text(resume_text[:1000] + "..." if len(resume_text) > 1000 else resume_text)
         
         # Upload to backend
-        with st.spinner("Ã°Å¸Â¤â€“ AI is analyzing your resume and generating a summary..."):
+        with st.spinner("🤖 AI is analyzing your resume and generating a summary..."):
             try:
                 payload = {"text_content": resume_text}
                 response = requests.post(
@@ -103,17 +103,17 @@ if st.button("Ã°Å¸Å¡â‚¬ Upload & Analyze Resume", type="primary", use_
                 
                 if response.status_code == 200:
                     result = response.json()
-                    st.success("Ã¢Å“â€¦ Resume uploaded and analyzed successfully!")
+                    st.success("✅ Resume uploaded and analyzed successfully!")
                     
                     # Show summary
-                    st.markdown("### Ã°Å¸â€œÅ  Resume Summary")
+                    st.markdown("### 📊 Resume Summary")
                     st.markdown(result.get("summary", ""))
                     
                     # Show RAG status
                     if result.get("rag_enabled", False):
-                        st.info("Ã¢Å“Â¨ Your resume is now stored in the AI's memory for personalized interview questions!")
+                        st.info("✨ Your resume is now stored in the AI's memory for personalized interview questions!")
                     else:
-                        st.warning("Ã¢Å¡Â Ã¯Â¸Â Resume summary saved, but vector storage may not be enabled.")
+                        st.warning("⚠️ Resume summary saved, but vector storage may not be enabled.")
                     
                     st.balloons()
                     
@@ -126,19 +126,19 @@ if st.button("Ã°Å¸Å¡â‚¬ Upload & Analyze Resume", type="primary", use_
                         error_detail = error_json.get("detail", response.text)
                     except Exception:
                         error_detail = response.text or f"Status code: {response.status_code}"
-                    st.error(f"Ã¢ÂÅ’ Failed to upload resume: {error_detail}")
+                    st.error(f"❌ Failed to upload resume: {error_detail}")
                     
             except requests.exceptions.Timeout:
-                st.error("Ã¢ÂÂ±Ã¯Â¸Â Request timed out. The resume might be too large. Try a shorter version.")
+                st.error("⏳ Request timed out. The resume might be too large. Try a shorter version.")
             except requests.exceptions.RequestException as e:
-                st.error(f"Ã¢ÂÅ’ Error communicating with server: {str(e)}")
+                st.error(f"❌ Error communicating with server: {str(e)}")
             except Exception as e:
-                st.error(f"Ã¢ÂÅ’ Unexpected error: {str(e)}")
+                st.error(f"❌ Unexpected error: {str(e)}")
 
 st.divider()
 
 # Information section
-st.markdown("### Ã°Å¸â€™Â¡ How It Works")
+st.markdown("### 💡 How It Works")
 info_col1, info_col2, info_col3 = st.columns(3)
 
 with info_col1:
@@ -166,7 +166,7 @@ with info_col3:
 
 st.markdown("""
 ---
-**Ã°Å¸â€™Â¡ Tip:** After uploading your resume, go to the Todo List page and click "Discuss" on any task to get personalized interview questions based on your actual experience!
+**💡 Tip:** After uploading your resume, go to the Todo List page and click "Discuss" on any task to get personalized interview questions based on your actual experience!
 """)
 
 

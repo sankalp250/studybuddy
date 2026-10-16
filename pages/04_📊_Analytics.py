@@ -4,9 +4,9 @@ import os
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Analytics - StudyBuddy", page_icon="Ã°Å¸â€œÅ ", layout="wide")
+st.set_page_config(page_title="Analytics - StudyBuddy", page_icon="📊", layout="wide")
 
-st.title("Ã°Å¸â€œÅ  Study Analytics")
+st.title("📊 Study Analytics")
 st.markdown("Track your learning progress and habits.")
 
 # Get backend URL
@@ -16,7 +16,7 @@ API_URL = f"{BASE_API_URL.rstrip('/')}/api/users/me/stats"
 
 # Check authentication
 if "access_token" not in st.session_state or not st.session_state.access_token:
-    st.warning("Ã°Å¸â€â€™ Please log in to view your analytics.")
+    st.warning("🔒 Please log in to view your analytics.")
     st.info("You can log in from the 'Home' page or any other tool page.")
 else:
     auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -58,7 +58,7 @@ else:
                 st.info("Start using the app to see your activity stats here!")
         
         elif response.status_code == 401:
-            st.warning("Ã¢Å¡Â Ã¯Â¸Â Session expired or invalid. Please log in again.")
+            st.warning("⚠️ Session expired or invalid. Please log in again.")
             if st.button("Refresh Login"):
                 if "access_token" in st.session_state:
                     del st.session_state.access_token

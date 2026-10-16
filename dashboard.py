@@ -6,7 +6,7 @@ from frontend_config import get_backend_url, LIVE_RENDER_URL
 
 st.set_page_config(
     page_title="StudyBuddy AI - Home",
-    page_icon="ðŸ¤–",
+    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -27,11 +27,11 @@ with st.sidebar:
     
     col_cloud, col_local = st.columns(2)
     with col_cloud:
-        if st.button("ðŸŒ Live Render", use_container_width=True):
+        if st.button("🌐 Live Render", use_container_width=True):
             st.session_state.backend_url = LIVE_RENDER_URL
             st.rerun()
     with col_local:
-        if st.button("ðŸ’» Localhost", use_container_width=True):
+        if st.button("💻 Localhost", use_container_width=True):
             st.session_state.backend_url = LOCAL_URL
             st.rerun()
             
@@ -54,7 +54,7 @@ def check_backend_status(url, timeout=5):
         return False, str(e)
 
 # Main layout
-st.title("Welcome to StudyBuddy AI! ðŸ¤–")
+st.title("Welcome to StudyBuddy AI! 🤖")
 st.markdown("Your intelligent ecosystem for focused learning and interview preparation.")
 
 st.divider()
@@ -63,7 +63,7 @@ st.divider()
 backend_status, backend_data = check_backend_status(BACKEND_URL, timeout=5)
 
 if backend_status:
-    st.success(f"âœ… Backend is running and connected at **{BACKEND_URL}**")
+    st.success(f"✅ Backend is running and connected at **{BACKEND_URL}**")
     if isinstance(backend_data, dict):
         st.json(backend_data)
 else:
@@ -72,7 +72,7 @@ else:
     col1, col2 = st.columns([1, 2])
     with col1:
         if "onrender.com" in BACKEND_URL:
-            if st.button("âš¡ Wake Up Render Backend", type="primary", use_container_width=True):
+            if st.button("⚡ Wake Up Render Backend", type="primary", use_container_width=True):
                 with st.spinner("Pinging Render backend to wake up from free-tier sleep mode (takes ~30s)..."):
                     wake_success = False
                     start_time = time.time()
@@ -87,13 +87,13 @@ else:
                         time.sleep(3)
                         
                     if wake_success:
-                        st.success("ðŸŽ‰ Backend is awake and ready!")
+                        st.success("🎉 Backend is awake and ready!")
                         st.cache_data.clear()
                         st.rerun()
                     else:
                         st.error("Backend wake-up timed out. If this URL is inactive, try switching to https://studybuddy-huu6.onrender.com.")
         else:
-            if st.button("ðŸ”„ Retry Connection", type="primary", use_container_width=True):
+            if st.button("🔄 Retry Connection", type="primary", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
                 
@@ -111,7 +111,7 @@ st.divider()
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.header("ðŸŽ¯ Smart TODO List")
+    st.header("🎯 Smart TODO List")
     st.markdown("""
     - Track your study goals
     - Set deadlines and priorities
@@ -120,7 +120,7 @@ with col1:
     """)
 
 with col2:
-    st.header("ðŸ“° Daily Digest")
+    st.header("📰 Daily Digest")
     st.markdown("""
     - AI-generated news summaries
     - Stay updated on any topic
@@ -129,7 +129,7 @@ with col2:
     """)
 
 with col3:
-    st.header("ðŸ’» LeetCode Practice")
+    st.header("💻 LeetCode Practice")
     st.markdown("""
     - AI-generated coding problems
     - Multiple difficulty levels
@@ -140,13 +140,13 @@ with col3:
 st.divider()
 
 # Quick stats section
-st.header("ðŸš€ Features Overview")
+st.header("🚀 Features Overview")
 
 feature_col1, feature_col2 = st.columns(2)
 
 with feature_col1:
     st.markdown("""
-    ### ðŸ“š Study Tools
+    ### 📚 Study Tools
     - **Flashcard System with SRS**: Spaced repetition for efficient learning
     - **Resume-based Interview Prep**: Upload your resume for personalized questions
     - **Dynamic Chat Interface**: Interactive AI assistant for study sessions
@@ -154,7 +154,7 @@ with feature_col1:
 
 with feature_col2:
     st.markdown("""
-    ### ðŸ¤– AI-Powered
+    ### 🤖 AI-Powered
     - **Groq LLM Integration**: Fast, efficient AI responses
     - **Tavily Web Search**: Real-time web research capabilities
     - **Context-Aware Assistance**: Personalized based on your profile
@@ -162,10 +162,10 @@ with feature_col2:
 
 # Documentation links
 st.divider()
-st.markdown("### ðŸ”— Quick Links")
+st.markdown("### 🔗 Quick Links")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("ðŸ“– View API Docs", use_container_width=True):
+    if st.button("📖 View API Docs", use_container_width=True):
         st.markdown(f"Visit: [{BACKEND_URL}/docs]({BACKEND_URL}/docs)")
 

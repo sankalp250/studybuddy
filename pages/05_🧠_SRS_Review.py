@@ -1,11 +1,11 @@
-# In pages/06_Ã°Å¸Â§Â _SRS_Review.py
+# In pages/05_🧠_SRS_Review.py
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Config & URLs ---
-st.set_page_config(page_title="SRS Review", page_icon="Ã°Å¸Â§Â ", layout="centered")
+st.set_page_config(page_title="SRS Review", page_icon="🧠", layout="centered")
 
 # --- Get backend URL from session state or use fallback ---
 from frontend_config import get_backend_url
@@ -45,11 +45,11 @@ if 'show_answer' not in st.session_state:
     st.session_state.show_answer = False
 
 # --- Main Page Logic ---
-st.title("Ã°Å¸Â§Â  Spaced Repetition Review")
+st.title("🧠 Spaced Repetition Review")
 
 # Check for login first
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("Ã°Å¸â€â€™ Authentication required.")
+    st.error("🔒 Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         # Allow setting backend URL
@@ -85,7 +85,7 @@ else:
         
         # Check if the session is complete
         if st.session_state.card_index >= total_cards:
-            st.success("Ã°Å¸Å½â€° Review session complete! Great job!")
+            st.success("🎉 Review session complete! Great job!")
             st.balloons()
             # Clear the session data for the next time
             st.session_state.due_cards = []
