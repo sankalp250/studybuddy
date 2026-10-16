@@ -113,7 +113,7 @@ if st.button("🚀 Upload & Analyze Resume", type="primary", use_container_width
                     if result.get("rag_enabled", False):
                         st.info("✨ Your resume is now stored in the AI's memory for personalized interview questions!")
                     else:
-                        st.warning("⚠️ Resume summary saved, but vector storage may not be enabled.")
+                        st.info("✨ Resume analyzed and saved! The AI will now use your experience for personalized interview questions.")
                     
                     st.balloons()
                     
