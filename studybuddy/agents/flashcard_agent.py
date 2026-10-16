@@ -1,7 +1,7 @@
 from langchain_groq import ChatGroq
 from studybuddy.core.config import settings
 
-def create_flashcard_agent(model_name: str = "llama-3.1-8b-instant"):
+def create_flashcard_agent(model_name: str = "openai/gpt-oss-20b"):
     """Creates a simple agent that generates flashcards from text."""
     if not settings.GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
@@ -44,3 +44,4 @@ if __name__ == "__main__":
     result = agent(test_text)
     print("\nGenerated Flashcards:")
     print(result)
+

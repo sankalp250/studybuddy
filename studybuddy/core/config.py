@@ -9,5 +9,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY: str | None = None
     TAVILY_API_KEY: str | None = None
     DATABASE_URL: str
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
 
 settings = Settings()
+

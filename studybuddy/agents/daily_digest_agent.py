@@ -13,14 +13,14 @@ class AgentState(TypedDict):
     """The state of our agent."""
     messages: Annotated[List[AnyMessage], operator.add]
 
-def create_daily_digest_agent(model_name: str = "llama3-70b-8192"): # Add model_name parameter with a default
+def create_daily_digest_agent(model_name: str = "openai/gpt-oss-20b"): # Add model_name parameter with a default
     """Creates and compiles the LangGraph agent."""
     
     if not settings.GROQ_API_KEY:
         raise ValueError("GROQ_API_KEY not found in environment variables.")
 
     # Use the model_name passed to the function
-    llm = ChatGroq(model_name="llama-3.1-8b-instant", groq_api_key=settings.GROQ_API_KEY)
+    llm = ChatGroq(model_name="openai/gpt-oss-20b", groq_api_key=settings.GROQ_API_KEY)
     
     llm_with_tools = llm.bind_tools([search_tool])
     tools = [search_tool]

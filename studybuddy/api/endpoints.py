@@ -35,31 +35,31 @@ _interview_agent = None
 def get_daily_digest_agent():
     global _daily_digest_agent
     if _daily_digest_agent is None:
-        _daily_digest_agent = create_daily_digest_agent(model_name="llama-3.1-8b-instant")
+        _daily_digest_agent = create_daily_digest_agent(model_name="openai/gpt-oss-20b")
     return _daily_digest_agent
 
 def get_leetcode_agent():
     global _leetcode_agent
     if _leetcode_agent is None:
-        _leetcode_agent = create_leetcode_agent(model_name="llama-3.1-8b-instant")
+        _leetcode_agent = create_leetcode_agent(model_name="openai/gpt-oss-20b")
     return _leetcode_agent
 
 def get_flashcard_agent():
     global _flashcard_agent
     if _flashcard_agent is None:
-        _flashcard_agent = create_flashcard_agent(model_name="llama-3.1-8b-instant")
+        _flashcard_agent = create_flashcard_agent(model_name="openai/gpt-oss-20b")
     return _flashcard_agent
 
 def get_resume_agent():
     global _resume_agent
     if _resume_agent is None:
-        _resume_agent = create_resume_agent(model_name="llama-3.1-8b-instant")
+        _resume_agent = create_resume_agent(model_name="openai/gpt-oss-20b")
     return _resume_agent
 
 def get_interview_agent():
     global _interview_agent
     if _interview_agent is None:
-        _interview_agent = create_interview_agent(model_name="llama-3.1-8b-instant")
+        _interview_agent = create_interview_agent(model_name="openai/gpt-oss-20b")
     return _interview_agent
 
 # --- User and Todo Endpoints (WORKING) ---
@@ -153,7 +153,7 @@ def agent_chat(
                     user_id=current_user.id,
                     study_topic=study_topic,
                     messages=[{"role": m.role, "content": m.content} for m in request.messages],
-                    model_name="llama-3.1-8b-instant"
+                    model_name="openai/gpt-oss-20b"
                 )
                 return schemas.AgentResponse(response=response)
             except Exception as rag_error:
@@ -411,5 +411,6 @@ def get_resume_summary(
 ):
     """Gets the current user's resume summary."""
     return {"resume_summary": current_user.resume_summary or "No resume uploaded yet."}
+
 
 

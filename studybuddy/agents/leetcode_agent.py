@@ -6,7 +6,7 @@ from langchain_groq import ChatGroq
 
 from studybuddy.core.config import settings
 
-def create_leetcode_agent(model_name: str = "llama3-70b-8192"):
+def create_leetcode_agent(model_name: str = "openai/gpt-oss-20b"):
     """
     Creates a runnable chain that generates a LeetCode-style problem
     based on a given topic and difficulty, using our stable Groq model.
