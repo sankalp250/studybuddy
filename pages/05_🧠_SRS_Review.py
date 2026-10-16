@@ -1,14 +1,14 @@
-# In pages/06_ðŸ§ _SRS_Review.py
+# In pages/06_Ã°Å¸Â§Â _SRS_Review.py
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Config & URLs ---
-st.set_page_config(page_title="SRS Review", page_icon="ðŸ§ ", layout="centered")
+st.set_page_config(page_title="SRS Review", page_icon="Ã°Å¸Â§Â ", layout="centered")
 
 # --- Get backend URL from session state or use fallback ---
-from studybuddy.core.config import get_backend_url
+from frontend_config import get_backend_url
 BASE_API_URL = get_backend_url()
 BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 DUE_CARDS_URL = f"{BASE_API_URL}/flashcards/due/"
@@ -45,11 +45,11 @@ if 'show_answer' not in st.session_state:
     st.session_state.show_answer = False
 
 # --- Main Page Logic ---
-st.title("ðŸ§  Spaced Repetition Review")
+st.title("Ã°Å¸Â§Â  Spaced Repetition Review")
 
 # Check for login first
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("ðŸ”’ Authentication required.")
+    st.error("Ã°Å¸â€â€™ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         # Allow setting backend URL
@@ -85,7 +85,7 @@ else:
         
         # Check if the session is complete
         if st.session_state.card_index >= total_cards:
-            st.success("ðŸŽ‰ Review session complete! Great job!")
+            st.success("Ã°Å¸Å½â€° Review session complete! Great job!")
             st.balloons()
             # Clear the session data for the next time
             st.session_state.due_cards = []
@@ -130,4 +130,5 @@ else:
 
     else:
         st.info("You have no cards due for review right now. Come back later!")
+
 

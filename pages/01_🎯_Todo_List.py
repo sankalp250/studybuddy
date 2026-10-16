@@ -1,14 +1,14 @@
-# In pages/01_ðŸŽ¯_Todo_List.py (CONVERSATIONAL CHAT VERSION)
+# In pages/01_Ã°Å¸Å½Â¯_Todo_List.py (CONVERSATIONAL CHAT VERSION)
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Config & URLs ---
-st.set_page_config(page_title="My Smart TODOs", page_icon="ðŸŽ¯", layout="wide")
+st.set_page_config(page_title="My Smart TODOs", page_icon="Ã°Å¸Å½Â¯", layout="wide")
 
 # --- Get backend URL from session state or use fallback ---
-from studybuddy.core.config import get_backend_url
+from frontend_config import get_backend_url
 BASE_API_URL = get_backend_url()
 BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 TODO_API_URL = f"{BASE_API_URL}/todos/"  # Updated URL
@@ -18,7 +18,7 @@ USERS_URL = f"{BASE_API_URL}/users/"
 
 # If the user isn't logged in, don't show the page.
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("ðŸ”’ Authentication required.")
+    st.error("Ã°Å¸â€â€™ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         current_backend = get_backend_url()
@@ -83,7 +83,7 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
 auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
 
 # --- Page Title ---
-st.title("ðŸŽ¯ My Smart TODO List")
+st.title("Ã°Å¸Å½Â¯ My Smart TODO List")
 st.markdown("Select a task to begin a dynamic, AI-powered interview prep session!")
 
 # --- Session State for Chat History ---
@@ -127,7 +127,7 @@ with col1:
                     st.session_state.current_topic = todo_title
                     st.session_state.chat_messages = [{"role": "assistant", "content": f"Hello! Let's prepare for your task: **{todo_title}**. Ask me anything, or I can generate some initial questions for you."}]
                 
-                st.button(f"Discuss: {todo['title']} ðŸ§ ", key=f"prepare_{todo['id']}", on_click=start_chat_session, args=[todo['title']])
+                st.button(f"Discuss: {todo['title']} Ã°Å¸Â§Â ", key=f"prepare_{todo['id']}", on_click=start_chat_session, args=[todo['title']])
     except requests.exceptions.RequestException as e:
         st.error(f"Could not load TODOs: {e}")
 
@@ -139,7 +139,7 @@ with col2:
         st.info(f"Currently discussing: **{st.session_state.current_topic}**")
 
         # --- NEW "Generate Flashcards" BUTTON ---
-        if st.button("Create Flashcards from this Conversation ðŸª„"):
+        if st.button("Create Flashcards from this Conversation Ã°Å¸Âªâ€ž"):
             with st.spinner("AI is analyzing the conversation to create flashcards..."):
                 # Combine the conversation history into a single block of text
                 conversation_text = "\n".join(
@@ -159,7 +159,7 @@ with col2:
                     response.raise_for_status()
                     
                     st.success(response.json().get("detail", "Flashcards created!"))
-                    st.toast("âœ… Flashcards saved! Check the SRS Review page later.")
+                    st.toast("Ã¢Å“â€¦ Flashcards saved! Check the SRS Review page later.")
 
                 except requests.exceptions.RequestException as e:
                     st.error(f"Failed to create flashcards. Error: {e}")
@@ -196,5 +196,6 @@ with col2:
                         st.error(error_msg)
                         st.session_state.chat_messages.append({"role": "assistant", "content": error_msg})
     else:
-        st.info("ðŸ‘ˆ Select a task from the left to start preparing!")
+        st.info("Ã°Å¸â€˜Ë† Select a task from the left to start preparing!")
+
 

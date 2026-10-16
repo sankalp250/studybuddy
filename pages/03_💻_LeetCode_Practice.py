@@ -1,15 +1,15 @@
-# In pages/04_ðŸ’»_LeetCode_Practice.py (MULTI-PROBLEM VERSION)
+# In pages/04_Ã°Å¸â€™Â»_LeetCode_Practice.py (MULTI-PROBLEM VERSION)
 
 import streamlit as st
 import requests
 import time
 import os
 
-st.set_page_config(page_title="LeetCode Practice", page_icon="ðŸ’»", layout="wide")
+st.set_page_config(page_title="LeetCode Practice", page_icon="Ã°Å¸â€™Â»", layout="wide")
 
 # --- Authentication Check ---
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("ðŸ”’ Authentication required.")
+    st.error("Ã°Å¸â€â€™ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         current_backend = get_backend_url()
@@ -28,12 +28,12 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.stop()
 
 # --- Get backend URL from session state or use fallback ---
-from studybuddy.core.config import get_backend_url
+from frontend_config import get_backend_url
 BASE_API_URL = get_backend_url()
 BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 API_URL = f"{BASE_API_URL}/generate-leetcode/"
 
-st.title("ðŸ’» Brain-Sharp LeetCode Generator")
+st.title("Ã°Å¸â€™Â» Brain-Sharp LeetCode Generator")
 st.markdown("Generate a set of AI-created coding problems to sharpen your skills.")
 
 # Use a list to store multiple problems
@@ -57,7 +57,7 @@ if st.button("Generate Problem Set (3 Questions)", type="primary"):
     
     # Loop 3 times to generate 3 problems
     for i in range(3):
-        progress_text = f"ðŸ§  AI is crafting problem {i + 1} of 3..."
+        progress_text = f"Ã°Å¸Â§Â  AI is crafting problem {i + 1} of 3..."
         progress_bar.progress((i) / 3.0, text=progress_text)
         
         try:
@@ -78,7 +78,7 @@ if st.button("Generate Problem Set (3 Questions)", type="primary"):
             st.error(f"Failed to generate problem {i + 1}. Is the backend running? Error: {e}")
             break # Stop if one of the API calls fails
             
-    progress_bar.progress(1.0, text="âœ… Problem set generated!")
+    progress_bar.progress(1.0, text="Ã¢Å“â€¦ Problem set generated!")
     time.sleep(1)
     progress_bar.empty()
 
@@ -92,7 +92,7 @@ if st.session_state.leetcode_problems:
         st.subheader(f"Problem #{i + 1}")
         st.markdown(problem, unsafe_allow_html=True)
         
-        with st.expander("ðŸ’¡ Helper & Solution"):
+        with st.expander("Ã°Å¸â€™Â¡ Helper & Solution"):
             if st.button(f"Explain Solution for Problem #{i + 1}", key=f"explain_{i}"):
                 with st.spinner("Analyzing problem and generating explanation..."):
                     try:
@@ -108,11 +108,12 @@ if st.session_state.leetcode_problems:
                         resp.raise_for_status()
                         explanation = resp.json().get("response", "No explanation received.")
                         
-                        st.markdown("### ðŸ“ Explanation & Approach")
+                        st.markdown("### Ã°Å¸â€œÂ Explanation & Approach")
                         st.markdown(explanation)
                         
                     except Exception as e:
                         st.error(f"Could not fetch explanation: {e}")
         
         st.divider()
+
 

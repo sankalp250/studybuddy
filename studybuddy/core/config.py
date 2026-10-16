@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
     TAVILY_API_KEY: str | None = None
-    DATABASE_URL: str
+    DATABASE_URL: str | None = None
     GROQ_MODEL: str = "openai/gpt-oss-20b"
 
 settings = Settings()
@@ -42,3 +42,4 @@ def get_backend_url() -> str:
         return target
     except Exception:
         return LIVE_RENDER_URL
+
