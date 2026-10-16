@@ -1,15 +1,15 @@
-# In pages/02_📰_Daily_Digest.py
+﻿# In pages/02_ðŸ“°_Daily_Digest.py
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Configuration ---
-st.set_page_config(page_title="AI Daily Digest", page_icon="📰", layout="wide")
+st.set_page_config(page_title="AI Daily Digest", page_icon="ðŸ“°", layout="wide")
 
 # --- Authentication Check ---
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("🔒 Authentication required.")
+    st.error("ðŸ”’ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
@@ -29,11 +29,11 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
 
 # --- Get backend URL from session state or use fallback ---
 BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
-BASE_API_URL = f"{BASE_API_URL}/api"
+BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 API_URL = f"{BASE_API_URL}/daily-digest/"
 
 # --- Page Title & Description ---
-st.title("📰 AI-Powered Daily Digest")
+st.title("ðŸ“° AI-Powered Daily Digest")
 st.markdown("Enter any topic, and our advanced AI agent will search the web and generate a concise summary for you.")
 
 # --- User Input Section ---
@@ -52,7 +52,7 @@ if st.button("Generate Digest", type="primary"):
                 response = requests.post(API_URL, json=payload, headers=auth_headers, timeout=180)
                 response.raise_for_status()
                 result = response.json()
-                st.subheader("📝 Here's Your AI-Generated Summary:")
+                st.subheader("ðŸ“ Here's Your AI-Generated Summary:")
                 st.markdown(result.get("response", "No response found."))
             except requests.exceptions.RequestException as e:
                 st.error(f"Failed to connect to the backend. Error: {e}")

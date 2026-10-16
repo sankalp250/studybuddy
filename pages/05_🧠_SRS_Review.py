@@ -1,15 +1,15 @@
-# In pages/06_🧠_SRS_Review.py
+﻿# In pages/06_ðŸ§ _SRS_Review.py
 
 import streamlit as st
 import requests
 import os
 
 # --- Page Config & URLs ---
-st.set_page_config(page_title="SRS Review", page_icon="🧠", layout="centered")
+st.set_page_config(page_title="SRS Review", page_icon="ðŸ§ ", layout="centered")
 
 # --- Get backend URL from session state or use fallback ---
 BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
-BASE_API_URL = f"{BASE_API_URL}/api"
+BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 DUE_CARDS_URL = f"{BASE_API_URL}/flashcards/due/"
 
 # --- Helper functions for API calls ---
@@ -44,11 +44,11 @@ if 'show_answer' not in st.session_state:
     st.session_state.show_answer = False
 
 # --- Main Page Logic ---
-st.title("🧠 Spaced Repetition Review")
+st.title("ðŸ§  Spaced Repetition Review")
 
 # Check for login first
 if "access_token" not in st.session_state or st.session_state.access_token is None:
-    st.error("🔒 Authentication required.")
+    st.error("ðŸ”’ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
         # Allow setting backend URL
@@ -84,7 +84,7 @@ else:
         
         # Check if the session is complete
         if st.session_state.card_index >= total_cards:
-            st.success("🎉 Review session complete! Great job!")
+            st.success("ðŸŽ‰ Review session complete! Great job!")
             st.balloons()
             # Clear the session data for the next time
             st.session_state.due_cards = []

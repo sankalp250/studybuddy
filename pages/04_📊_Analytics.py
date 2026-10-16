@@ -1,21 +1,21 @@
-import streamlit as st
+﻿import streamlit as st
 import requests
 import os
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Analytics - StudyBuddy", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Analytics - StudyBuddy", page_icon="ðŸ“Š", layout="wide")
 
-st.title("📊 Study Analytics")
+st.title("ðŸ“Š Study Analytics")
 st.markdown("Track your learning progress and habits.")
 
 # Get backend URL
 BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
-API_URL = f"{BASE_API_URL}/api/users/me/stats"
+API_URL = f"{BASE_API_URL.rstrip('/')}/api/users/me/stats"
 
 # Check authentication
 if "access_token" not in st.session_state or not st.session_state.access_token:
-    st.warning("🔒 Please log in to view your analytics.")
+    st.warning("ðŸ”’ Please log in to view your analytics.")
     st.info("You can log in from the 'Home' page or any other tool page.")
 else:
     auth_headers = {"Authorization": f"Bearer {st.session_state.access_token}"}
@@ -57,7 +57,7 @@ else:
                 st.info("Start using the app to see your activity stats here!")
         
         elif response.status_code == 401:
-            st.warning("⚠️ Session expired or invalid. Please log in again.")
+            st.warning("âš ï¸ Session expired or invalid. Please log in again.")
             if st.button("Refresh Login"):
                 if "access_token" in st.session_state:
                     del st.session_state.access_token
@@ -68,3 +68,4 @@ else:
             
     except Exception as e:
         st.error(f"Error connecting to backend: {e}")
+
