@@ -1,4 +1,4 @@
-﻿import streamlit as st
+import streamlit as st
 import requests
 import os
 import pandas as pd
@@ -10,7 +10,8 @@ st.title("ðŸ“Š Study Analytics")
 st.markdown("Track your learning progress and habits.")
 
 # Get backend URL
-BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
+from studybuddy.core.config import get_backend_url
+BASE_API_URL = get_backend_url()
 API_URL = f"{BASE_API_URL.rstrip('/')}/api/users/me/stats"
 
 # Check authentication
@@ -68,4 +69,5 @@ else:
             
     except Exception as e:
         st.error(f"Error connecting to backend: {e}")
+
 

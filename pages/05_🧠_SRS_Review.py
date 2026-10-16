@@ -1,4 +1,4 @@
-﻿# In pages/06_ðŸ§ _SRS_Review.py
+# In pages/06_ðŸ§ _SRS_Review.py
 
 import streamlit as st
 import requests
@@ -8,7 +8,8 @@ import os
 st.set_page_config(page_title="SRS Review", page_icon="ðŸ§ ", layout="centered")
 
 # --- Get backend URL from session state or use fallback ---
-BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
+from studybuddy.core.config import get_backend_url
+BASE_API_URL = get_backend_url()
 BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 DUE_CARDS_URL = f"{BASE_API_URL}/flashcards/due/"
 
@@ -52,7 +53,7 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     with st.sidebar:
         st.subheader("Authentication")
         # Allow setting backend URL
-        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
+        current_backend = get_backend_url()
         new_backend = st.text_input("Backend URL", value=current_backend)
         if new_backend and new_backend != current_backend:
             st.session_state.backend_url = new_backend
@@ -129,3 +130,4 @@ else:
 
     else:
         st.info("You have no cards due for review right now. Come back later!")
+

@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import requests
 import time
+from studybuddy.core.config import get_backend_url, LIVE_RENDER_URL
 
 st.set_page_config(
     page_title="StudyBuddy AI - Home",
@@ -13,33 +14,8 @@ st.set_page_config(
 # ---------------------------------------------------------
 # Backend URL Resolution
 # ---------------------------------------------------------
-CLOUD_RENDER_URL = "https://studybuddy-huu6.onrender.com"
 LOCAL_URL = "http://127.0.0.1:8000"
-OLD_DEFUNCT_URL = "studybuddy-backend-xodg.onrender.com"
-
-# Read configured URL from env or Streamlit secrets
-env_backend = (
-    os.getenv("BACKEND_URL")
-    or os.getenv("BACKEND_API_URL")
-    or (st.secrets.get("BACKEND_URL") if hasattr(st, "secrets") and "BACKEND_URL" in st.secrets else None)
-    or (st.secrets.get("BACKEND_API_URL") if hasattr(st, "secrets") and "BACKEND_API_URL" in st.secrets else None)
-)
-
-# If env/secret points to old defunct xodg service or localhost, auto-correct to live huu6 service
-if env_backend and OLD_DEFUNCT_URL in env_backend:
-    default_target = CLOUD_RENDER_URL
-elif env_backend and "127.0.0.1" not in env_backend and "localhost" not in env_backend:
-    default_target = env_backend.rstrip("/")
-else:
-    default_target = CLOUD_RENDER_URL
-
-if "backend_url" not in st.session_state:
-    st.session_state.backend_url = default_target
-elif OLD_DEFUNCT_URL in st.session_state.backend_url:
-    st.session_state.backend_url = CLOUD_RENDER_URL
-
-BACKEND_URL = st.session_state.backend_url.rstrip("/")
-st.session_state.backend_url = BACKEND_URL
+BACKEND_URL = get_backend_url()
 BASE_URL = BACKEND_URL
 
 # ---------------------------------------------------------
@@ -52,7 +28,7 @@ with st.sidebar:
     col_cloud, col_local = st.columns(2)
     with col_cloud:
         if st.button("🌐 Live Render", use_container_width=True):
-            st.session_state.backend_url = CLOUD_RENDER_URL
+            st.session_state.backend_url = LIVE_RENDER_URL
             st.rerun()
     with col_local:
         if st.button("💻 Localhost", use_container_width=True):
@@ -80,13 +56,6 @@ def check_backend_status(url, timeout=5):
 # Main layout
 st.title("Welcome to StudyBuddy AI! 🤖")
 st.markdown("Your intelligent ecosystem for focused learning and interview preparation.")
-
-# Check for old defunct URL and provide instant fix
-if OLD_DEFUNCT_URL in BACKEND_URL:
-    st.warning("⚠️ **Notice:** You are pointing to an old, inactive backend (studybuddy-backend-xodg). The active backend is studybuddy-huu6.")
-    if st.button("🚀 Switch to Active Backend (https://studybuddy-huu6.onrender.com)", type="primary"):
-        st.session_state.backend_url = CLOUD_RENDER_URL
-        st.rerun()
 
 st.divider()
 
@@ -134,7 +103,6 @@ else:
             - **Active Production Backend**: The working Render backend for this app is:
               https://studybuddy-huu6.onrender.com
             - **Render Sleep Mode**: Render free instances spin down after 15 minutes of inactivity and wake up when pinged.
-            - **Streamlit Secrets**: If your Streamlit Cloud app settings have BACKEND_URL = {BACKEND_URL}, you can update it in the Streamlit Cloud dashboard under App Settings ➡️ Secrets.
             """)
 
 st.divider()

@@ -1,4 +1,4 @@
-﻿# In pages/01_ðŸŽ¯_Todo_List.py (CONVERSATIONAL CHAT VERSION)
+# In pages/01_ðŸŽ¯_Todo_List.py (CONVERSATIONAL CHAT VERSION)
 
 import streamlit as st
 import requests
@@ -8,7 +8,8 @@ import os
 st.set_page_config(page_title="My Smart TODOs", page_icon="ðŸŽ¯", layout="wide")
 
 # --- Get backend URL from session state or use fallback ---
-BASE_API_URL = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
+from studybuddy.core.config import get_backend_url
+BASE_API_URL = get_backend_url()
 BASE_API_URL = f"{BASE_API_URL.rstrip('/')}/api"
 TODO_API_URL = f"{BASE_API_URL}/todos/"  # Updated URL
 AGENT_CHAT_URL = f"{BASE_API_URL}/agent/chat/"
@@ -20,7 +21,7 @@ if "access_token" not in st.session_state or st.session_state.access_token is No
     st.error("ðŸ”’ Authentication required.")
     with st.sidebar:
         st.subheader("Authentication")
-        current_backend = st.session_state.get("backend_url", os.getenv("BACKEND_URL", "https://studybuddy-huu6.onrender.com"))
+        current_backend = get_backend_url()
         new_backend = st.text_input("Backend URL", value=current_backend)
         if new_backend and new_backend != current_backend:
             st.session_state.backend_url = new_backend
@@ -196,3 +197,4 @@ with col2:
                         st.session_state.chat_messages.append({"role": "assistant", "content": error_msg})
     else:
         st.info("ðŸ‘ˆ Select a task from the left to start preparing!")
+

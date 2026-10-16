@@ -1,4 +1,4 @@
-﻿# In pages/04_ðŸ“„_Resume_Upload.py
+# In pages/04_ðŸ“„_Resume_Upload.py
 
 import streamlit as st
 import requests
@@ -12,7 +12,8 @@ st.set_page_config(
 )
 
 # Get backend URL from session state
-BACKEND_URL = st.session_state.get("backend_url", "https://studybuddy-huu6.onrender.com").rstrip("/")
+from studybuddy.core.config import get_backend_url
+BACKEND_URL = get_backend_url()
 UPLOAD_RESUME_URL = f"{BACKEND_URL}/api/upload-resume/"
 GET_RESUME_SUMMARY_URL = f"{BACKEND_URL}/api/resume-summary/"
 
@@ -167,5 +168,6 @@ st.markdown("""
 ---
 **ðŸ’¡ Tip:** After uploading your resume, go to the Todo List page and click "Discuss" on any task to get personalized interview questions based on your actual experience!
 """)
+
 
 
