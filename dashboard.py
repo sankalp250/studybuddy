@@ -13,24 +13,29 @@ st.set_page_config(
 # ---------------------------------------------------------
 # Backend URL Resolution
 # ---------------------------------------------------------
-# 1. Environment variable (BACKEND_URL or BACKEND_API_URL)
-# 2. Streamlit Cloud Secrets (if deployed on Streamlit Cloud)
-# 3. Default to the production Render URL
 CLOUD_RENDER_URL = "https://studybuddy-huu6.onrender.com"
 LOCAL_URL = "http://127.0.0.1:8000"
+OLD_DEFUNCT_URL = "studybuddy-backend-xodg.onrender.com"
 
+# Read configured URL from env or Streamlit secrets
 env_backend = (
     os.getenv("BACKEND_URL")
     or os.getenv("BACKEND_API_URL")
     or (st.secrets.get("BACKEND_URL") if hasattr(st, "secrets") and "BACKEND_URL" in st.secrets else None)
+    or (st.secrets.get("BACKEND_API_URL") if hasattr(st, "secrets") and "BACKEND_API_URL" in st.secrets else None)
 )
 
-default_target = env_backend.rstrip("/") if env_backend else CLOUD_RENDER_URL
+# If env/secret points to old defunct xodg service or localhost, auto-correct to live huu6 service
+if env_backend and OLD_DEFUNCT_URL in env_backend:
+    default_target = CLOUD_RENDER_URL
+elif env_backend and "127.0.0.1" not in env_backend and "localhost" not in env_backend:
+    default_target = env_backend.rstrip("/")
+else:
+    default_target = CLOUD_RENDER_URL
 
 if "backend_url" not in st.session_state:
     st.session_state.backend_url = default_target
-elif st.session_state.backend_url in ("http://127.0.0.1:8000", "http://localhost:8000") and not env_backend:
-    # Reset stale localhost default if no explicit local env var is set
+elif OLD_DEFUNCT_URL in st.session_state.backend_url:
     st.session_state.backend_url = CLOUD_RENDER_URL
 
 BACKEND_URL = st.session_state.backend_url.rstrip("/")
@@ -46,11 +51,11 @@ with st.sidebar:
     
     col_cloud, col_local = st.columns(2)
     with col_cloud:
-        if st.button("🌐 Use Render", use_container_width=True):
+        if st.button("🌐 Live Render", use_container_width=True):
             st.session_state.backend_url = CLOUD_RENDER_URL
             st.rerun()
     with col_local:
-        if st.button("💻 Use Local", use_container_width=True):
+        if st.button("💻 Localhost", use_container_width=True):
             st.session_state.backend_url = LOCAL_URL
             st.rerun()
             
@@ -76,6 +81,13 @@ def check_backend_status(url, timeout=5):
 st.title("Welcome to StudyBuddy AI! 🤖")
 st.markdown("Your intelligent ecosystem for focused learning and interview preparation.")
 
+# Check for old defunct URL and provide instant fix
+if OLD_DEFUNCT_URL in BACKEND_URL:
+    st.warning("⚠️ **Notice:** You are pointing to an old, inactive backend (studybuddy-backend-xodg). The active backend is studybuddy-huu6.")
+    if st.button("🚀 Switch to Active Backend (https://studybuddy-huu6.onrender.com)", type="primary"):
+        st.session_state.backend_url = CLOUD_RENDER_URL
+        st.rerun()
+
 st.divider()
 
 # Check backend status
@@ -90,39 +102,39 @@ else:
     
     col1, col2 = st.columns([1, 2])
     with col1:
-        # Render Free Tier Wake Up Button
         if "onrender.com" in BACKEND_URL:
             if st.button("⚡ Wake Up Render Backend", type="primary", use_container_width=True):
-                with st.spinner("Waking up Render backend... Free instances sleep after inactivity and can take 30-45 seconds to spin up."):
+                with st.spinner("Pinging Render backend to wake up from free-tier sleep mode (takes ~30s)..."):
                     wake_success = False
                     start_time = time.time()
                     while time.time() - start_time < 50:
                         try:
-                            r = requests.get(BACKEND_URL, timeout=10)
+                            r = requests.get(BACKEND_URL, timeout=8)
                             if r.status_code == 200:
                                 wake_success = True
                                 break
                         except Exception:
                             pass
-                        time.sleep(4)
+                        time.sleep(3)
                         
                     if wake_success:
                         st.success("🎉 Backend is awake and ready!")
                         st.cache_data.clear()
                         st.rerun()
                     else:
-                        st.error("Backend wake-up timed out. Please check your Render dashboard service status.")
+                        st.error("Backend wake-up timed out. If this URL is inactive, try switching to https://studybuddy-huu6.onrender.com.")
         else:
             if st.button("🔄 Retry Connection", type="primary", use_container_width=True):
                 st.cache_data.clear()
                 st.rerun()
                 
     with col2:
-        with st.expander("ℹ️ Why is this happening?"):
-            st.markdown("""
-            - **Render Free Tier Sleep Mode**: If you are connecting to Render (*.onrender.com), instances automatically spin down after 15 minutes of inactivity. Click **'Wake Up Render Backend'** above and wait ~30-45 seconds.
-            - **Localhost Development**: If running locally, make sure your FastAPI backend is running via uvicorn main:app --host 127.0.0.1 --port 8000 --reload.
-            - **Switch Server**: You can switch between Render Cloud and Localhost using the sidebar options.
+        with st.expander("ℹ️ Connection Tips"):
+            st.markdown(f"""
+            - **Active Production Backend**: The working Render backend for this app is:
+              https://studybuddy-huu6.onrender.com
+            - **Render Sleep Mode**: Render free instances spin down after 15 minutes of inactivity and wake up when pinged.
+            - **Streamlit Secrets**: If your Streamlit Cloud app settings have BACKEND_URL = {BACKEND_URL}, you can update it in the Streamlit Cloud dashboard under App Settings ➡️ Secrets.
             """)
 
 st.divider()
